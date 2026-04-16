@@ -1,17 +1,635 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="SampahPintar — Aplikasi Pengelolaan Sampah Harian" />
-    <title>SampahPintar ♻</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="./src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SampahPintar ♻</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<!-- React & Babel (no build step needed) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<!-- SheetJS untuk ekspor Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1a10;--surface:#162118;--card:#1e2d20;--border:#2a3e2c;
+  --accent1:#5dbd6a;--accent2:#c9a84c;--accent3:#e07050;--blue:#5aa8d6;
+  --text:#d4e6d5;--muted:#7a9e7e;--white:#f0f7f1;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+h1,h2,h3,h4{font-family:'Syne',sans-serif}
+#root{display:flex;min-height:100vh}
+input[type=number]::-webkit-inner-spin-button{opacity:.4}
+select option{background:var(--card)}
+
+/* Sidebar */
+.sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.sidebar-logo h2{font-size:15px;font-weight:800;color:var(--accent1);line-height:1.2}
+.sidebar-logo span{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .15s;user-select:none}
+.nav-item:hover{color:var(--text);background:rgba(93,189,106,.06)}
+.nav-item.active{color:var(--accent1);border-left-color:var(--accent1);background:rgba(93,189,106,.1)}
+.nav-icon{font-size:16px}
+.sidebar-footer{margin-top:auto;padding:20px;border-top:1px solid var(--border)}
+.sidebar-footer .label{font-size:11px;color:var(--muted)}
+.sidebar-footer .count{font-size:20px;font-family:'Syne',sans-serif;font-weight:700;color:var(--accent1)}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;flex-shrink:0}
+.topbar h1{font-size:17px;font-weight:700;color:var(--white)}
+.topbar .date{font-size:12px;color:var(--muted)}
+.content{padding:24px 28px;overflow-y:auto;flex:1}
+
+/* Cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin-bottom:18px}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--white);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+
+/* Grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+
+/* Form elements */
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+label{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent1)}
+textarea{resize:vertical}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--accent1);color:#0a1a0b}
+.btn-primary:hover{background:#70d47e;transform:translateY(-1px)}
+.btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-secondary:hover{border-color:var(--accent1);color:var(--accent1)}
+.btn-danger{background:var(--accent3);color:#fff;padding:5px 11px;font-size:12px}
+.btn-danger:hover{background:#ea8060}
+.btn-amber{background:var(--accent2);color:#1a1200}
+.btn-amber:hover{background:#d9b85c}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+
+/* Badge */
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.8px;text-transform:uppercase}
+.badge-green{background:rgba(93,189,106,.15);color:var(--accent1)}
+.badge-amber{background:rgba(201,168,76,.15);color:var(--accent2)}
+
+/* Pill */
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-kompos{background:rgba(93,189,106,.15);color:var(--accent1)}
+.pill-bank{background:rgba(90,168,214,.15);color:var(--blue)}
+.pill-tpa{background:rgba(224,112,80,.15);color:var(--accent3)}
+
+/* Stat tile */
+.stat-tile{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.stat-tile::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.st-green::before{background:var(--accent1)}
+.st-amber::before{background:var(--accent2)}
+.st-blue::before{background:var(--blue)}
+.st-red::before{background:var(--accent3)}
+.stat-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+.stat-value{font-size:21px;font-family:'Syne',sans-serif;font-weight:700;color:var(--white)}
+.stat-unit{font-size:12px;color:var(--muted);margin-left:3px}
+
+/* Progress */
+.prog-row{margin-bottom:14px}
+.prog-header{display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px}
+.prog-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .5s}
+
+/* Table */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:8px 11px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:8px 11px;border-bottom:1px solid rgba(42,62,44,.4);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(93,189,106,.03)}
+
+/* Info box */
+.infobox{font-size:12px;color:var(--muted);border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.8}
+.infobox-green{background:rgba(93,189,106,.06);border:1px solid rgba(93,189,106,.15)}
+.infobox-amber{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15)}
+.infobox-blue{background:rgba(90,168,214,.08);border:1px solid rgba(90,168,214,.2);color:var(--blue)}
+.infobox-red{background:rgba(224,112,80,.08);border:1px solid rgba(224,112,80,.2);color:var(--accent3)}
+
+/* Preview */
+.preview{background:rgba(93,189,106,.07);border:1px solid rgba(93,189,106,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.preview-title{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.8px;text-transform:uppercase}
+.preview-row{display:flex;gap:20px;flex-wrap:wrap;font-size:13px}
+
+/* Empty */
+.empty{text-align:center;padding:40px;color:var(--muted)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+
+/* Bar chart */
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:90px;padding-top:8px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bar-stack{display:flex;flex-direction:column;justify-content:flex-end;height:70px;gap:1px;width:100%}
+.bar{width:100%;border-radius:3px 3px 0 0;min-height:3px}
+.bar-val{font-size:9px;color:var(--muted)}
+.bar-lbl{font-size:9px;color:var(--muted);white-space:nowrap}
+
+/* Section title */
+.sec-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--accent1);color:#0a1a0b;padding:11px 18px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:999;animation:slideUp .3s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* Divider */
+hr{border:none;border-top:1px solid var(--border);margin:6px 0 16px}
+
+/* Ekspor sheet list */
+.sheet-item{display:flex;gap:12px;margin-bottom:12px}
+.sheet-icon{font-size:20px;flex-shrink:0}
+.sheet-name{font-weight:600;color:var(--white);font-size:13px}
+.sheet-desc{font-size:12px;color:var(--muted)}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .grid2{grid-template-columns:1fr}
+  .grid4{grid-template-columns:1fr 1fr}
+  .content{padding:16px}
+  .topbar{padding:12px 16px}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useCallback } = React;
+
+// ── Constants ──────────────────────────────────────────────
+const BULAN_FULL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+const PENGELOLAAN = ["Komposting","Bank Sampah","TPA"];
+const TODAY = new Date();
+const TAHUN_OPT = [2024,2025,2026,2027];
+
+function fmt(n){ return Number(n||0).toFixed(2); }
+function fmtKg(n){ return `${fmt(n)} kg`; }
+
+// ── Excel Export ────────────────────────────────────────────
+function exportExcel(records, bulanIdx, tahun) {
+  const XLSX = window.XLSX;
+  const namaBulan = BULAN_FULL[bulanIdx];
+  const wb = XLSX.utils.book_new();
+
+  const rows = records
+    .filter(r => { const d=new Date(r.tanggal); return d.getMonth()===bulanIdx && d.getFullYear()===tahun; })
+    .sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+
+  // Sheet 1: Data Harian
+  const s1data = [
+    [`LAPORAN DATA HARIAN — ${namaBulan} ${tahun}`],
+    [`Dicetak: ${new Date().toLocaleDateString('id-ID')}`],
+    [],
+    ['Tanggal','Organik (kg)','Anorganik (kg)','Total (kg)','Kelola Organik','Kelola Anorganik','Keterangan'],
+    ...rows.map(r=>[r.tanggal, +r.organik, +r.anorganik, +r.organik+ +r.anorganik, r.pengelolaan_organik, r.pengelolaan_anorganik, r.keterangan||'']),
+    [],['TOTAL','','','','','',''],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(s1data);
+  const ds=5, de=ds+rows.length-1;
+  if(rows.length>0){
+    ws1[`B${de+2}`]={f:`SUM(B${ds}:B${de})`,t:'n'};
+    ws1[`C${de+2}`]={f:`SUM(C${ds}:C${de})`,t:'n'};
+    ws1[`D${de+2}`]={f:`SUM(D${ds}:D${de})`,t:'n'};
+  }
+  ws1['!cols']=[14,14,16,14,22,22,28].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws1,'Data Harian');
+
+  // Sheet 2: Rekap
+  const byP={Komposting:0,'Bank Sampah':0,TPA:0};
+  rows.forEach(r=>{byP[r.pengelolaan_organik]=(byP[r.pengelolaan_organik]||0)+ +r.organik; byP[r.pengelolaan_anorganik]=(byP[r.pengelolaan_anorganik]||0)+ +r.anorganik;});
+  const tot=rows.reduce((s,r)=>s+ +r.organik+ +r.anorganik,0);
+  const totOrg=rows.reduce((s,r)=>s+ +r.organik,0);
+  const totAnorg=rows.reduce((s,r)=>s+ +r.anorganik,0);
+  const s2data=[
+    [`REKAP PENGELOLAAN — ${namaBulan} ${tahun}`],[],
+    ['Metode','Jumlah (kg)','Persentase'],
+    ...PENGELOLAAN.map(p=>[p,byP[p]||0,tot?`${((byP[p]||0)/tot*100).toFixed(1)}%`:'0%']),
+    [],['Total',tot,'100%'],[],
+    ['Ringkasan Operasional'],
+    ['Hari Pencatatan',rows.length,'hari'],
+    ['Rata-rata Harian',rows.length?(tot/rows.length).toFixed(2):0,'kg/hari'],
+    ['Total Organik',totOrg.toFixed(2),'kg'],
+    ['Total Anorganik',totAnorg.toFixed(2),'kg'],
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(s2data);
+  ws2['!cols']=[28,16,16].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws2,'Rekap Pengelolaan');
+
+  // Sheet 3: Laporan Bulanan
+  const s3data=[
+    ['LAPORAN BULANAN PENGELOLAAN SAMPAH'],
+    [`Periode: ${namaBulan} ${tahun}`],
+    [`Dicetak: ${new Date().toLocaleDateString('id-ID')}`],[],
+    ['A. RINGKASAN TIMBULAN'],
+    ['Jenis','Volume (kg)','Persentase'],
+    ['Organik',totOrg.toFixed(2),tot?`${(totOrg/tot*100).toFixed(1)}%`:'0%'],
+    ['Anorganik',totAnorg.toFixed(2),tot?`${(totAnorg/tot*100).toFixed(1)}%`:'0%'],
+    ['TOTAL',tot.toFixed(2),'100%'],[],
+    ['B. METODE PENGELOLAAN'],
+    ['Metode','Volume (kg)','Persentase'],
+    ...PENGELOLAAN.map(p=>[p,(byP[p]||0).toFixed(2),tot?`${((byP[p]||0)/tot*100).toFixed(1)}%`:'0%']),
+    [],[`C. STATISTIK OPERASIONAL`],
+    ['Hari Pencatatan',rows.length,'hari'],
+    ['Rata-rata Harian',rows.length?(tot/rows.length).toFixed(2):0,'kg/hari'],
+    ['Puncak Organik',rows.length?Math.max(...rows.map(r=>+r.organik)).toFixed(2):0,'kg'],
+    ['Puncak Anorganik',rows.length?Math.max(...rows.map(r=>+r.anorganik)).toFixed(2):0,'kg'],
+  ];
+  const ws3=XLSX.utils.aoa_to_sheet(s3data);
+  ws3['!cols']=[32,16,16].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws3,'Laporan Bulanan');
+
+  XLSX.writeFile(wb,`Laporan_Sampah_${namaBulan}_${tahun}.xlsx`);
+}
+
+// ── Sub-components ──────────────────────────────────────────
+function Pill({p}){
+  const cls = p==='Komposting'?'pill-kompos':p==='Bank Sampah'?'pill-bank':'pill-tpa';
+  return <span className={`pill ${cls}`}>{p}</span>;
+}
+
+function Toast({msg}){
+  if(!msg) return null;
+  return <div className="toast">{msg}</div>;
+}
+
+function StatTile({label,value,unit,cls}){
+  return(
+    <div className={`stat-tile ${cls}`}>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}<span className="stat-unit">{unit}</span></div>
+    </div>
+  );
+}
+
+function ProgRow({label,val,total,color,icon}){
+  const pct = total ? val/total : 0;
+  return(
+    <div className="prog-row">
+      <div className="prog-header">
+        <span style={{color,fontWeight:600}}>{icon} {label}</span>
+        <span style={{color:'var(--muted)',fontSize:12}}>{fmtKg(val)} ({(pct*100).toFixed(1)}%)</span>
+      </div>
+      <div className="prog-bar">
+        <div className="prog-fill" style={{width:`${pct*100}%`,background:color}}/>
+      </div>
+    </div>
+  );
+}
+
+// ── Selector row ────────────────────────────────────────────
+function MonthSelector({bulan,setBulan,tahun,setTahun}){
+  const selStyle={background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,color:'var(--text)',padding:'7px 12px',fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:'none',width:'auto'};
+  return(
+    <div style={{display:'flex',gap:10,marginBottom:18,alignItems:'center'}}>
+      <select value={bulan} onChange={e=>setBulan(Number(e.target.value))} style={selStyle}>
+        {BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}
+      </select>
+      <select value={tahun} onChange={e=>setTahun(Number(e.target.value))} style={selStyle}>
+        {TAHUN_OPT.map(y=><option key={y}>{y}</option>)}
+      </select>
+    </div>
+  );
+}
+
+// ── Page: Input ─────────────────────────────────────────────
+function PageInput({form,setField,onSubmit,onReset}){
+  const total = Number(form.organik||0)+Number(form.anorganik||0);
+  return(
+    <>
+      {/* Tanggal */}
+      <div className="card">
+        <div className="card-title">🗓 Informasi Tanggal</div>
+        <div className="field" style={{maxWidth:260}}>
+          <label>Tanggal Pencatatan *</label>
+          <input type="date" value={form.tanggal} onChange={e=>setField('tanggal',e.target.value)}/>
+        </div>
+      </div>
+
+      {/* Organik & Anorganik */}
+      <div className="grid2">
+        <div className="card">
+          <div className="card-title">🌿 Sampah Organik <span className="badge badge-green">Organik</span></div>
+          <div className="field">
+            <label>Volume (kg) *</label>
+            <input type="number" min="0" step="0.01" placeholder="0.00" value={form.organik} onChange={e=>setField('organik',e.target.value)}/>
+          </div>
+          <div className="field">
+            <label>Metode Pengelolaan *</label>
+            <select value={form.pengelolaan_organik} onChange={e=>setField('pengelolaan_organik',e.target.value)}>
+              {PENGELOLAAN.map(p=><option key={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="infobox infobox-green">
+            <strong style={{color:'var(--accent1)'}}>♻ Komposting</strong> — Sisa makanan, daun, limbah kebun<br/>
+            <strong style={{color:'var(--blue)'}}>🏦 Bank Sampah</strong> — Organik bernilai ekonomi<br/>
+            <strong style={{color:'var(--accent3)'}}>🗑 TPA</strong> — Sisa yang tidak dapat dikelola
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">🧴 Sampah Anorganik <span className="badge badge-amber">Anorganik</span></div>
+          <div className="field">
+            <label>Volume (kg) *</label>
+            <input type="number" min="0" step="0.01" placeholder="0.00" value={form.anorganik} onChange={e=>setField('anorganik',e.target.value)}/>
+          </div>
+          <div className="field">
+            <label>Metode Pengelolaan *</label>
+            <select value={form.pengelolaan_anorganik} onChange={e=>setField('pengelolaan_anorganik',e.target.value)}>
+              {PENGELOLAAN.map(p=><option key={p}>{p}</option>)}
+            </select>
+          </div>
+          <div className="infobox infobox-amber">
+            <strong style={{color:'var(--blue)'}}>🏦 Bank Sampah</strong> — Plastik, kertas, logam, kaca<br/>
+            <strong style={{color:'var(--accent3)'}}>🗑 TPA</strong> — Sampah campuran/residu<br/>
+            <strong style={{color:'var(--accent1)'}}>♻ Komposting</strong> — Jika dapat diproses ulang
+          </div>
+        </div>
+      </div>
+
+      {/* Keterangan & Submit */}
+      <div className="card">
+        <div className="card-title">📝 Keterangan & Simpan</div>
+        <div className="field">
+          <label>Catatan (opsional)</label>
+          <textarea rows={2} placeholder="Misal: musim hujan, acara khusus..." value={form.keterangan} onChange={e=>setField('keterangan',e.target.value)}/>
+        </div>
+        {total > 0 && (
+          <div className="preview">
+            <div className="preview-title">Pratinjau</div>
+            <div className="preview-row">
+              <span>🌿 Organik: <strong style={{color:'var(--accent1)'}}>{fmt(form.organik)} kg</strong></span>
+              <span>🧴 Anorganik: <strong style={{color:'var(--accent2)'}}>{fmt(form.anorganik)} kg</strong></span>
+              <span>📦 Total: <strong style={{color:'var(--white)'}}>{fmt(total)} kg</strong></span>
+            </div>
+          </div>
+        )}
+        <div className="btn-row">
+          <button className="btn btn-primary" onClick={onSubmit}>✓ Simpan Data</button>
+          <button className="btn btn-secondary" onClick={onReset}>✕ Reset Form</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Page: Data ──────────────────────────────────────────────
+function PageData({records,onDelete}){
+  const [bulan,setBulan]=useState(TODAY.getMonth());
+  const [tahun,setTahun]=useState(TODAY.getFullYear());
+  const filtered=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulan&&d.getFullYear()===tahun;}).sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
+  const totO=filtered.reduce((s,r)=>s+ +r.organik,0);
+  const totA=filtered.reduce((s,r)=>s+ +r.anorganik,0);
+  return(
+    <>
+      <MonthSelector bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun}/>
+      <div className="card">
+        {filtered.length===0?(
+          <div className="empty">
+            <div className="empty-icon">📭</div>
+            <div>Belum ada data untuk periode ini</div>
+            <div style={{fontSize:12,marginTop:6}}>Input data dari menu "Input Harian"</div>
+          </div>
+        ):(
+          <div className="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>Tanggal</th><th>Organik (kg)</th><th>Anorganik (kg)</th><th>Total (kg)</th>
+                <th>Kelola Organik</th><th>Kelola Anorganik</th><th>Keterangan</th><th></th>
+              </tr></thead>
+              <tbody>
+                {filtered.map(r=>(
+                  <tr key={r.id}>
+                    <td style={{fontWeight:600,color:'var(--white)'}}>{new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}</td>
+                    <td style={{color:'var(--accent1)'}}>{fmt(r.organik)}</td>
+                    <td style={{color:'var(--accent2)'}}>{fmt(r.anorganik)}</td>
+                    <td style={{fontWeight:600}}>{fmt(+r.organik+ +r.anorganik)}</td>
+                    <td><Pill p={r.pengelolaan_organik}/></td>
+                    <td><Pill p={r.pengelolaan_anorganik}/></td>
+                    <td style={{color:'var(--muted)',fontSize:12}}>{r.keterangan||'—'}</td>
+                    <td><button className="btn btn-danger" onClick={()=>onDelete(r.id)}>✕</button></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot><tr>
+                <td style={{fontWeight:700,fontSize:11,textTransform:'uppercase',color:'var(--muted)'}}>TOTAL</td>
+                <td style={{fontWeight:700,color:'var(--accent1)'}}>{fmt(totO)}</td>
+                <td style={{fontWeight:700,color:'var(--accent2)'}}>{fmt(totA)}</td>
+                <td style={{fontWeight:700,color:'var(--white)'}}>{fmt(totO+totA)}</td>
+                <td colSpan={4}/>
+              </tr></tfoot>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ── Page: Laporan ───────────────────────────────────────────
+function PageLaporan({records}){
+  const [bulan,setBulan]=useState(TODAY.getMonth());
+  const [tahun,setTahun]=useState(TODAY.getFullYear());
+  const filtered=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulan&&d.getFullYear()===tahun;}).sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
+  const totO=filtered.reduce((s,r)=>s+ +r.organik,0);
+  const totA=filtered.reduce((s,r)=>s+ +r.anorganik,0);
+  const tot=totO+totA;
+  const avg=filtered.length?tot/filtered.length:0;
+  const byP={Komposting:0,'Bank Sampah':0,TPA:0};
+  filtered.forEach(r=>{byP[r.pengelolaan_organik]=(byP[r.pengelolaan_organik]||0)+ +r.organik; byP[r.pengelolaan_anorganik]=(byP[r.pengelolaan_anorganik]||0)+ +r.anorganik;});
+  const last7=[...filtered].slice(-7);
+  const maxB=Math.max(...last7.map(r=>+r.organik+ +r.anorganik),1);
+  return(
+    <>
+      <MonthSelector bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun}/>
+      <div className="sec-title">Ringkasan — {BULAN_FULL[bulan]} {tahun}</div>
+      <div className="grid4">
+        <StatTile label="Total Sampah" value={fmt(tot)} unit="kg" cls="st-green"/>
+        <StatTile label="Rata-rata Harian" value={fmt(avg)} unit="kg/hr" cls="st-amber"/>
+        <StatTile label="Hari Pencatatan" value={filtered.length} unit="hari" cls="st-blue"/>
+        <StatTile label="Ke TPA" value={fmt(byP['TPA'])} unit="kg" cls="st-red"/>
+      </div>
+      <div className="grid2">
+        <div className="card">
+          <div className="sec-title">Komposisi Timbulan</div>
+          <ProgRow label="Organik" val={totO} total={tot} color="var(--accent1)" icon="🌿"/>
+          <ProgRow label="Anorganik" val={totA} total={tot} color="var(--accent2)" icon="🧴"/>
+        </div>
+        <div className="card">
+          <div className="sec-title">Metode Pengelolaan</div>
+          <ProgRow label="Komposting" val={byP['Komposting']} total={tot} color="var(--accent1)" icon="♻"/>
+          <ProgRow label="Bank Sampah" val={byP['Bank Sampah']} total={tot} color="var(--blue)" icon="🏦"/>
+          <ProgRow label="TPA" val={byP['TPA']} total={tot} color="var(--accent3)" icon="🗑"/>
+        </div>
+      </div>
+      {last7.length>0&&(
+        <div className="card">
+          <div className="sec-title">Tren 7 Entri Terakhir</div>
+          <div className="bar-chart">
+            {last7.map((r,i)=>{
+              const t=+r.organik+ +r.anorganik;
+              const h=Math.max((t/maxB)*66,4);
+              const ho=Math.max((+r.organik/maxB)*66,2);
+              return(
+                <div key={i} className="bar-col">
+                  <span className="bar-val">{fmt(t)}</span>
+                  <div className="bar-stack">
+                    <div className="bar" style={{height:ho,background:'var(--accent1)'}}/>
+                    <div className="bar" style={{height:h-ho,background:'var(--accent2)'}}/>
+                  </div>
+                  <span className="bar-lbl">{new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{display:'flex',gap:14,marginTop:8}}>
+            <span style={{fontSize:11,color:'var(--accent1)'}}>■ Organik</span>
+            <span style={{fontSize:11,color:'var(--accent2)'}}>■ Anorganik</span>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Page: Ekspor ────────────────────────────────────────────
+function PageEkspor({records,showToast}){
+  const [bulan,setBulan]=useState(TODAY.getMonth());
+  const [tahun,setTahun]=useState(TODAY.getFullYear());
+  const filtered=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulan&&d.getFullYear()===tahun;});
+  const tot=filtered.reduce((s,r)=>s+ +r.organik+ +r.anorganik,0);
+  const sheets=[
+    {icon:'📋',name:'Sheet 1: Data Harian',desc:'Semua entri harian + formula total otomatis'},
+    {icon:'📊',name:'Sheet 2: Rekap Pengelolaan',desc:'Ringkasan per metode + persentase'},
+    {icon:'📄',name:'Sheet 3: Laporan Bulanan',desc:'Laporan formal siap cetak/arsip'},
+  ];
+  return(
+    <>
+      <MonthSelector bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun}/>
+      <div className="card" style={{borderColor:'rgba(93,189,106,.3)'}}>
+        <div style={{display:'flex',gap:14,alignItems:'center',marginBottom:18}}>
+          <span style={{fontSize:32}}>📊</span>
+          <div>
+            <div className="card-title" style={{marginBottom:2}}>Ekspor — {BULAN_FULL[bulan]} {tahun}</div>
+            <div style={{fontSize:12,color:'var(--muted)'}}>{filtered.length} entri · {fmtKg(tot)} total</div>
+          </div>
+        </div>
+        <div style={{background:'rgba(0,0,0,.2)',borderRadius:10,padding:'14px 16px',marginBottom:18}}>
+          <div className="sec-title">Isi File Excel (.xlsx)</div>
+          {sheets.map(x=>(
+            <div key={x.name} className="sheet-item">
+              <span className="sheet-icon">{x.icon}</span>
+              <div>
+                <div className="sheet-name">{x.name}</div>
+                <div className="sheet-desc">{x.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {filtered.length===0?(
+          <div className="infobox infobox-red">⚠ Tidak ada data untuk periode ini. Silakan input data terlebih dahulu.</div>
+        ):(
+          <button className="btn btn-primary" style={{fontSize:14,padding:'11px 22px'}} onClick={()=>{
+            try{ exportExcel(records,bulan,tahun); showToast('✅ Laporan Excel berhasil diunduh!'); }
+            catch(e){ showToast('⚠️ Gagal: '+e.message); }
+          }}>⬇ Unduh Excel (.xlsx)</button>
+        )}
+      </div>
+      <div className="card">
+        <div className="sec-title">Tips Penggunaan</div>
+        <div style={{fontSize:13,color:'var(--muted)',lineHeight:2}}>
+          📌 Input data setiap hari untuk laporan yang akurat<br/>
+          📌 Ekspor di akhir bulan untuk pengarsipan rutin<br/>
+          📌 File .xlsx bisa langsung dibuka di Microsoft Excel atau Google Sheets<br/>
+          📌 Untuk Google Sheets: File → Import → Upload file xlsx<br/>
+          📌 Data tersimpan di sesi browser — ekspor sebelum menutup halaman
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Sidebar ─────────────────────────────────────────────────
+const NAV=[
+  {id:'input',icon:'📥',label:'Input Harian'},
+  {id:'data',icon:'📋',label:'Data Tersimpan'},
+  {id:'laporan',icon:'📊',label:'Laporan Bulanan'},
+  {id:'ekspor',icon:'📤',label:'Ekspor Excel'},
+];
+const PAGE_TITLE={input:'📥 Input Timbulan Harian',data:'📋 Data Tersimpan',laporan:'📊 Laporan Bulanan',ekspor:'📤 Ekspor Spreadsheet'};
+
+// ── Main App ─────────────────────────────────────────────────
+function App(){
+  const [page,setPage]=useState('input');
+  const [records,setRecords]=useState([]);
+  const [toast,setToast]=useState(null);
+  const [form,setForm]=useState({
+    tanggal:TODAY.toISOString().split('T')[0],
+    organik:'',anorganik:'',
+    pengelolaan_organik:'Komposting',
+    pengelolaan_anorganik:'Bank Sampah',
+    keterangan:'',
+  });
+
+  const showToast=msg=>{ setToast(msg); setTimeout(()=>setToast(null),2800); };
+  const setField=(k,v)=>setForm(f=>({...f,[k]:v}));
+
+  const onSubmit=()=>{
+    if(!form.tanggal||!form.organik||!form.anorganik){ showToast('⚠️ Lengkapi semua field wajib'); return; }
+    if(+form.organik<0||+form.anorganik<0){ showToast('⚠️ Volume tidak boleh negatif'); return; }
+    setRecords(r=>[...r,{...form,id:Date.now()}]);
+    setForm(f=>({...f,organik:'',anorganik:'',keterangan:''}));
+    showToast('✅ Data berhasil disimpan!');
+  };
+  const onReset=()=>setForm(f=>({...f,organik:'',anorganik:'',keterangan:''}));
+  const onDelete=id=>{ setRecords(r=>r.filter(x=>x.id!==id)); showToast('🗑 Data dihapus'); };
+
+  return(
+    <>
+      {/* Sidebar */}
+      <div className="sidebar">
+        <div className="sidebar-logo">
+          <h2>♻ SampahPintar</h2>
+          <span>Waste Management</span>
+        </div>
+        {NAV.map(n=>(
+          <div key={n.id} className={`nav-item${page===n.id?' active':''}`} onClick={()=>setPage(n.id)}>
+            <span className="nav-icon">{n.icon}</span>{n.label}
+          </div>
+        ))}
+        <div className="sidebar-footer">
+          <div className="label">Total data tersimpan</div>
+          <div className="count">{records.length} <span style={{fontSize:12}}>entri</span></div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="main">
+        <div className="topbar">
+          <h1>{PAGE_TITLE[page]}</h1>
+          <span className="date">{TODAY.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>
+        </div>
+        <div className="content">
+          {page==='input'  && <PageInput form={form} setField={setField} onSubmit={onSubmit} onReset={onReset}/>}
+          {page==='data'   && <PageData records={records} onDelete={onDelete}/>}
+          {page==='laporan'&& <PageLaporan records={records}/>}
+          {page==='ekspor' && <PageEkspor records={records} showToast={showToast}/>}
+        </div>
+      </div>
+
+      <Toast msg={toast}/>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
 </html>

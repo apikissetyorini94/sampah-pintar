@@ -6,17 +6,16 @@
 <title>SampahPintar ♻</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
-<!-- React & Babel (no build step needed) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
-<!-- SheetJS untuk ekspor Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#0f1a10;--surface:#162118;--card:#1e2d20;--border:#2a3e2c;
   --accent1:#5dbd6a;--accent2:#c9a84c;--accent3:#e07050;--blue:#5aa8d6;
+  --purple:#a78bfa;--teal:#2dd4bf;
   --text:#d4e6d5;--muted:#7a9e7e;--white:#f0f7f1;
 }
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
@@ -26,7 +25,7 @@ input[type=number]::-webkit-inner-spin-button{opacity:.4}
 select option{background:var(--card)}
 
 /* Sidebar */
-.sidebar{width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar{width:224px;min-width:224px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
 .sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
 .sidebar-logo h2{font-size:15px;font-weight:800;color:var(--accent1);line-height:1.2}
 .sidebar-logo span{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
@@ -51,15 +50,27 @@ select option{background:var(--card)}
 
 /* Grid */
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
 
-/* Form elements */
+/* Form */
 .field{margin-bottom:14px}
-.field:last-child{margin-bottom:0}
 label{display:block;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
 input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
 input:focus,select:focus,textarea:focus{border-color:var(--accent1)}
 textarea{resize:vertical}
+
+/* Jenis input row */
+.jenis-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:4px}
+.jenis-field{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;transition:border-color .2s}
+.jenis-field:focus-within{border-color:var(--accent1)}
+.jenis-label{font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.jenis-input{width:100%;background:transparent;border:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;outline:none;padding:0}
+.jenis-unit{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* Jenis anorganik row - 3 kolom */
+.anorg-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:4px}
 
 /* Buttons */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
@@ -69,20 +80,29 @@ textarea{resize:vertical}
 .btn-secondary:hover{border-color:var(--accent1);color:var(--accent1)}
 .btn-danger{background:var(--accent3);color:#fff;padding:5px 11px;font-size:12px}
 .btn-danger:hover{background:#ea8060}
-.btn-amber{background:var(--accent2);color:#1a1200}
-.btn-amber:hover{background:#d9b85c}
 .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
 
 /* Badge */
 .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.8px;text-transform:uppercase}
 .badge-green{background:rgba(93,189,106,.15);color:var(--accent1)}
 .badge-amber{background:rgba(201,168,76,.15);color:var(--accent2)}
+.badge-blue{background:rgba(90,168,214,.15);color:var(--blue)}
+.badge-purple{background:rgba(167,139,250,.15);color:var(--purple)}
+.badge-teal{background:rgba(45,212,191,.15);color:var(--teal)}
 
-/* Pill */
+/* Pill pengelolaan */
 .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
 .pill-kompos{background:rgba(93,189,106,.15);color:var(--accent1)}
 .pill-bank{background:rgba(90,168,214,.15);color:var(--blue)}
 .pill-tpa{background:rgba(224,112,80,.15);color:var(--accent3)}
+
+/* Pill jenis sampah */
+.jenis-pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:600;margin:1px}
+.jp-daun{background:rgba(93,189,106,.15);color:var(--accent1)}
+.jp-makan{background:rgba(45,212,191,.15);color:var(--teal)}
+.jp-kertas{background:rgba(201,168,76,.15);color:var(--accent2)}
+.jp-plastik{background:rgba(90,168,214,.15);color:var(--blue)}
+.jp-lain{background:rgba(167,139,250,.15);color:var(--purple)}
 
 /* Stat tile */
 .stat-tile{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
@@ -91,21 +111,22 @@ textarea{resize:vertical}
 .st-amber::before{background:var(--accent2)}
 .st-blue::before{background:var(--blue)}
 .st-red::before{background:var(--accent3)}
+.st-teal::before{background:var(--teal)}
 .stat-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
 .stat-value{font-size:21px;font-family:'Syne',sans-serif;font-weight:700;color:var(--white)}
 .stat-unit{font-size:12px;color:var(--muted);margin-left:3px}
 
 /* Progress */
-.prog-row{margin-bottom:14px}
-.prog-header{display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px}
+.prog-row{margin-bottom:12px}
+.prog-header{display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px}
 .prog-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
 .prog-fill{height:100%;border-radius:3px;transition:width .5s}
 
 /* Table */
 .tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;padding:8px 11px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:8px 11px;border-bottom:1px solid rgba(42,62,44,.4);vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 10px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid rgba(42,62,44,.4);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(93,189,106,.03)}
 
@@ -113,13 +134,15 @@ tr:hover td{background:rgba(93,189,106,.03)}
 .infobox{font-size:12px;color:var(--muted);border-radius:8px;padding:10px 12px;margin-top:10px;line-height:1.8}
 .infobox-green{background:rgba(93,189,106,.06);border:1px solid rgba(93,189,106,.15)}
 .infobox-amber{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15)}
-.infobox-blue{background:rgba(90,168,214,.08);border:1px solid rgba(90,168,214,.2);color:var(--blue)}
 .infobox-red{background:rgba(224,112,80,.08);border:1px solid rgba(224,112,80,.2);color:var(--accent3)}
 
 /* Preview */
 .preview{background:rgba(93,189,106,.07);border:1px solid rgba(93,189,106,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px}
-.preview-title{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.8px;text-transform:uppercase}
-.preview-row{display:flex;gap:20px;flex-wrap:wrap;font-size:13px}
+.preview-title{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:8px;letter-spacing:.8px;text-transform:uppercase}
+.preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.preview-item{font-size:12px}
+.preview-item .pv{font-weight:700;font-size:14px}
+.preview-total{margin-top:8px;padding-top:8px;border-top:1px solid rgba(93,189,106,.2);font-size:13px;font-weight:600}
 
 /* Empty */
 .empty{text-align:center;padding:40px;color:var(--muted)}
@@ -129,7 +152,7 @@ tr:hover td{background:rgba(93,189,106,.03)}
 .bar-chart{display:flex;align-items:flex-end;gap:5px;height:90px;padding-top:8px}
 .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
 .bar-stack{display:flex;flex-direction:column;justify-content:flex-end;height:70px;gap:1px;width:100%}
-.bar{width:100%;border-radius:3px 3px 0 0;min-height:3px}
+.bar{width:100%;border-radius:3px 3px 0 0;min-height:2px}
 .bar-val{font-size:9px;color:var(--muted)}
 .bar-lbl{font-size:9px;color:var(--muted);white-space:nowrap}
 
@@ -143,123 +166,191 @@ tr:hover td{background:rgba(93,189,106,.03)}
 /* Divider */
 hr{border:none;border-top:1px solid var(--border);margin:6px 0 16px}
 
-/* Ekspor sheet list */
+/* Sheet list */
 .sheet-item{display:flex;gap:12px;margin-bottom:12px}
 .sheet-icon{font-size:20px;flex-shrink:0}
 .sheet-name{font-weight:600;color:var(--white);font-size:13px}
 .sheet-desc{font-size:12px;color:var(--muted)}
 
+/* Subtotal row in table */
+.subtotal-row td{background:rgba(93,189,106,.05);font-weight:600;font-size:11px;color:var(--muted)}
+
 @media(max-width:768px){
   .sidebar{display:none}
-  .grid2{grid-template-columns:1fr}
-  .grid4{grid-template-columns:1fr 1fr}
-  .content{padding:16px}
+  .grid2,.jenis-row,.anorg-row{grid-template-columns:1fr}
+  .grid4,.grid5{grid-template-columns:1fr 1fr}
+  .grid3{grid-template-columns:1fr 1fr}
+  .content{padding:14px}
   .topbar{padding:12px 16px}
+  .preview-grid{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 <div id="root"></div>
-
 <script type="text/babel">
-const { useState, useCallback } = React;
+const { useState } = React;
 
-// ── Constants ──────────────────────────────────────────────
+// ── Constants ───────────────────────────────────────────────
 const BULAN_FULL = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const PENGELOLAAN = ["Komposting","Bank Sampah","TPA"];
 const TODAY = new Date();
 const TAHUN_OPT = [2024,2025,2026,2027];
 
+// Jenis sampah organik
+const JENIS_ORGANIK = [
+  { key:'daun',   label:'Daun',         icon:'🍃', color:'var(--accent1)', cls:'jp-daun'  },
+  { key:'makan',  label:'Sisa Makanan', icon:'🍱', color:'var(--teal)',    cls:'jp-makan' },
+];
+
+// Jenis sampah anorganik
+const JENIS_ANORGANIK = [
+  { key:'kertas',  label:'Kertas/Kardus',        icon:'📦', color:'var(--accent2)', cls:'jp-kertas'  },
+  { key:'plastik', label:'Plastik (Botol/Kantong)', icon:'🧴', color:'var(--blue)',    cls:'jp-plastik' },
+  { key:'lain',    label:'Lain-lain (Kaca/Besi)', icon:'🔩', color:'var(--purple)',  cls:'jp-lain'    },
+];
+
+const ALL_JENIS = [...JENIS_ORGANIK, ...JENIS_ANORGANIK];
+
 function fmt(n){ return Number(n||0).toFixed(2); }
 function fmtKg(n){ return `${fmt(n)} kg`; }
+function sumOrganik(r){ return (+r.daun||0)+(+r.makan||0); }
+function sumAnorganik(r){ return (+r.kertas||0)+(+r.plastik||0)+(+r.lain||0); }
+function sumTotal(r){ return sumOrganik(r)+sumAnorganik(r); }
 
-// ── Excel Export ────────────────────────────────────────────
-function exportExcel(records, bulanIdx, tahun) {
+// ── Excel Export ─────────────────────────────────────────────
+function exportExcel(records, bulanIdx, tahun){
   const XLSX = window.XLSX;
   const namaBulan = BULAN_FULL[bulanIdx];
   const wb = XLSX.utils.book_new();
 
   const rows = records
-    .filter(r => { const d=new Date(r.tanggal); return d.getMonth()===bulanIdx && d.getFullYear()===tahun; })
-    .sort((a,b) => a.tanggal.localeCompare(b.tanggal));
+    .filter(r=>{ const d=new Date(r.tanggal); return d.getMonth()===bulanIdx&&d.getFullYear()===tahun; })
+    .sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
 
-  // Sheet 1: Data Harian
-  const s1data = [
-    [`LAPORAN DATA HARIAN — ${namaBulan} ${tahun}`],
+  // ── Sheet 1: Data Harian Detail ──
+  const s1 = [
+    [`LAPORAN DATA HARIAN SAMPAH — ${namaBulan} ${tahun}`],
     [`Dicetak: ${new Date().toLocaleDateString('id-ID')}`],
     [],
-    ['Tanggal','Organik (kg)','Anorganik (kg)','Total (kg)','Kelola Organik','Kelola Anorganik','Keterangan'],
-    ...rows.map(r=>[r.tanggal, +r.organik, +r.anorganik, +r.organik+ +r.anorganik, r.pengelolaan_organik, r.pengelolaan_anorganik, r.keterangan||'']),
-    [],['TOTAL','','','','','',''],
+    ['Tanggal',
+     'Daun (kg)','Sisa Makanan (kg)','Total Organik (kg)',
+     'Kertas/Kardus (kg)','Plastik (kg)','Lain-lain (kg)','Total Anorganik (kg)',
+     'Total Keseluruhan (kg)',
+     'Kelola Organik','Kelola Anorganik','Keterangan'],
+    ...rows.map(r=>[
+      r.tanggal,
+      +r.daun||0, +r.makan||0, sumOrganik(r),
+      +r.kertas||0, +r.plastik||0, +r.lain||0, sumAnorganik(r),
+      sumTotal(r),
+      r.pengelolaan_organik, r.pengelolaan_anorganik, r.keterangan||''
+    ]),
+    [],
+    ['TOTAL','','','','','','','','','','',''],
   ];
-  const ws1 = XLSX.utils.aoa_to_sheet(s1data);
+  const ws1 = XLSX.utils.aoa_to_sheet(s1);
   const ds=5, de=ds+rows.length-1;
   if(rows.length>0){
-    ws1[`B${de+2}`]={f:`SUM(B${ds}:B${de})`,t:'n'};
-    ws1[`C${de+2}`]={f:`SUM(C${ds}:C${de})`,t:'n'};
-    ws1[`D${de+2}`]={f:`SUM(D${ds}:D${de})`,t:'n'};
+    ['B','C','D','E','F','G','H','I'].forEach(col=>{
+      ws1[`${col}${de+2}`]={f:`SUM(${col}${ds}:${col}${de})`,t:'n'};
+    });
   }
-  ws1['!cols']=[14,14,16,14,22,22,28].map(w=>({wch:w}));
+  ws1['!cols']=[12,14,18,16,18,14,16,18,18,18,18,24].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb,ws1,'Data Harian');
 
-  // Sheet 2: Rekap
-  const byP={Komposting:0,'Bank Sampah':0,TPA:0};
-  rows.forEach(r=>{byP[r.pengelolaan_organik]=(byP[r.pengelolaan_organik]||0)+ +r.organik; byP[r.pengelolaan_anorganik]=(byP[r.pengelolaan_anorganik]||0)+ +r.anorganik;});
-  const tot=rows.reduce((s,r)=>s+ +r.organik+ +r.anorganik,0);
-  const totOrg=rows.reduce((s,r)=>s+ +r.organik,0);
-  const totAnorg=rows.reduce((s,r)=>s+ +r.anorganik,0);
-  const s2data=[
-    [`REKAP PENGELOLAAN — ${namaBulan} ${tahun}`],[],
-    ['Metode','Jumlah (kg)','Persentase'],
-    ...PENGELOLAAN.map(p=>[p,byP[p]||0,tot?`${((byP[p]||0)/tot*100).toFixed(1)}%`:'0%']),
-    [],['Total',tot,'100%'],[],
-    ['Ringkasan Operasional'],
-    ['Hari Pencatatan',rows.length,'hari'],
-    ['Rata-rata Harian',rows.length?(tot/rows.length).toFixed(2):0,'kg/hari'],
-    ['Total Organik',totOrg.toFixed(2),'kg'],
-    ['Total Anorganik',totAnorg.toFixed(2),'kg'],
-  ];
-  const ws2=XLSX.utils.aoa_to_sheet(s2data);
-  ws2['!cols']=[28,16,16].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb,ws2,'Rekap Pengelolaan');
+  // ── Sheet 2: Rekap Per Jenis ──
+  const totDaun   = rows.reduce((s,r)=>s+(+r.daun||0),0);
+  const totMakan  = rows.reduce((s,r)=>s+(+r.makan||0),0);
+  const totKertas = rows.reduce((s,r)=>s+(+r.kertas||0),0);
+  const totPlastik= rows.reduce((s,r)=>s+(+r.plastik||0),0);
+  const totLain   = rows.reduce((s,r)=>s+(+r.lain||0),0);
+  const totOrg    = totDaun+totMakan;
+  const totAnorg  = totKertas+totPlastik+totLain;
+  const totAll    = totOrg+totAnorg;
 
-  // Sheet 3: Laporan Bulanan
-  const s3data=[
+  const pct = (v,t) => t ? `${(v/t*100).toFixed(1)}%` : '0%';
+
+  const s2 = [
+    [`REKAP PER JENIS SAMPAH — ${namaBulan} ${tahun}`],[],
+    ['A. SAMPAH ORGANIK'],
+    ['Jenis','Volume (kg)','% dari Organik','% dari Total'],
+    ['Daun',              totDaun.toFixed(2),   pct(totDaun,totOrg),   pct(totDaun,totAll)],
+    ['Sisa Makanan',      totMakan.toFixed(2),  pct(totMakan,totOrg),  pct(totMakan,totAll)],
+    ['TOTAL ORGANIK',     totOrg.toFixed(2),    '100%',                pct(totOrg,totAll)],
+    [],
+    ['B. SAMPAH ANORGANIK'],
+    ['Jenis','Volume (kg)','% dari Anorganik','% dari Total'],
+    ['Kertas/Kardus',          totKertas.toFixed(2),  pct(totKertas,totAnorg),  pct(totKertas,totAll)],
+    ['Plastik (Botol/Kantong)',totPlastik.toFixed(2), pct(totPlastik,totAnorg), pct(totPlastik,totAll)],
+    ['Lain-lain (Kaca/Besi)',  totLain.toFixed(2),    pct(totLain,totAnorg),    pct(totLain,totAll)],
+    ['TOTAL ANORGANIK',        totAnorg.toFixed(2),   '100%',                   pct(totAnorg,totAll)],
+    [],
+    ['TOTAL KESELURUHAN', totAll.toFixed(2),'','100%'],
+  ];
+  const ws2=XLSX.utils.aoa_to_sheet(s2);
+  ws2['!cols']=[28,14,18,14].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws2,'Rekap Per Jenis');
+
+  // ── Sheet 3: Rekap Pengelolaan ──
+  const byP={Komposting:0,'Bank Sampah':0,TPA:0};
+  rows.forEach(r=>{
+    byP[r.pengelolaan_organik]=(byP[r.pengelolaan_organik]||0)+sumOrganik(r);
+    byP[r.pengelolaan_anorganik]=(byP[r.pengelolaan_anorganik]||0)+sumAnorganik(r);
+  });
+  const s3=[
+    [`REKAP PENGELOLAAN SAMPAH — ${namaBulan} ${tahun}`],[],
+    ['Metode','Volume (kg)','Persentase'],
+    ...PENGELOLAAN.map(p=>[p,(byP[p]||0).toFixed(2), pct(byP[p]||0,totAll)]),
+    [],['Total',totAll.toFixed(2),'100%'],
+  ];
+  const ws3=XLSX.utils.aoa_to_sheet(s3);
+  ws3['!cols']=[24,14,14].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws3,'Rekap Pengelolaan');
+
+  // ── Sheet 4: Laporan Bulanan Formal ──
+  const s4=[
     ['LAPORAN BULANAN PENGELOLAAN SAMPAH'],
     [`Periode: ${namaBulan} ${tahun}`],
     [`Dicetak: ${new Date().toLocaleDateString('id-ID')}`],[],
-    ['A. RINGKASAN TIMBULAN'],
+    ['A. TIMBULAN SAMPAH ORGANIK'],
     ['Jenis','Volume (kg)','Persentase'],
-    ['Organik',totOrg.toFixed(2),tot?`${(totOrg/tot*100).toFixed(1)}%`:'0%'],
-    ['Anorganik',totAnorg.toFixed(2),tot?`${(totAnorg/tot*100).toFixed(1)}%`:'0%'],
-    ['TOTAL',tot.toFixed(2),'100%'],[],
-    ['B. METODE PENGELOLAAN'],
+    ['Daun',totDaun.toFixed(2),pct(totDaun,totOrg)],
+    ['Sisa Makanan',totMakan.toFixed(2),pct(totMakan,totOrg)],
+    ['Sub-total Organik',totOrg.toFixed(2),pct(totOrg,totAll)],[],
+    ['B. TIMBULAN SAMPAH ANORGANIK'],
+    ['Jenis','Volume (kg)','Persentase'],
+    ['Kertas/Kardus',totKertas.toFixed(2),pct(totKertas,totAnorg)],
+    ['Plastik (Botol/Kantong)',totPlastik.toFixed(2),pct(totPlastik,totAnorg)],
+    ['Lain-lain (Kaca/Besi)',totLain.toFixed(2),pct(totLain,totAnorg)],
+    ['Sub-total Anorganik',totAnorg.toFixed(2),pct(totAnorg,totAll)],[],
+    ['TOTAL KESELURUHAN',totAll.toFixed(2),'100%'],[],
+    ['C. METODE PENGELOLAAN'],
     ['Metode','Volume (kg)','Persentase'],
-    ...PENGELOLAAN.map(p=>[p,(byP[p]||0).toFixed(2),tot?`${((byP[p]||0)/tot*100).toFixed(1)}%`:'0%']),
-    [],[`C. STATISTIK OPERASIONAL`],
+    ...PENGELOLAAN.map(p=>[p,(byP[p]||0).toFixed(2),pct(byP[p]||0,totAll)]),
+    [],[`D. STATISTIK OPERASIONAL`],
     ['Hari Pencatatan',rows.length,'hari'],
-    ['Rata-rata Harian',rows.length?(tot/rows.length).toFixed(2):0,'kg/hari'],
-    ['Puncak Organik',rows.length?Math.max(...rows.map(r=>+r.organik)).toFixed(2):0,'kg'],
-    ['Puncak Anorganik',rows.length?Math.max(...rows.map(r=>+r.anorganik)).toFixed(2):0,'kg'],
+    ['Rata-rata Harian',rows.length?(totAll/rows.length).toFixed(2):0,'kg/hari'],
+    ['Puncak Organik',rows.length?Math.max(...rows.map(r=>sumOrganik(r))).toFixed(2):0,'kg'],
+    ['Puncak Anorganik',rows.length?Math.max(...rows.map(r=>sumAnorganik(r))).toFixed(2):0,'kg'],
   ];
-  const ws3=XLSX.utils.aoa_to_sheet(s3data);
-  ws3['!cols']=[32,16,16].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb,ws3,'Laporan Bulanan');
+  const ws4=XLSX.utils.aoa_to_sheet(s4);
+  ws4['!cols']=[32,14,14].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws4,'Laporan Bulanan');
 
   XLSX.writeFile(wb,`Laporan_Sampah_${namaBulan}_${tahun}.xlsx`);
 }
 
-// ── Sub-components ──────────────────────────────────────────
+// ── Sub-components ────────────────────────────────────────
 function Pill({p}){
-  const cls = p==='Komposting'?'pill-kompos':p==='Bank Sampah'?'pill-bank':'pill-tpa';
+  const cls=p==='Komposting'?'pill-kompos':p==='Bank Sampah'?'pill-bank':'pill-tpa';
   return <span className={`pill ${cls}`}>{p}</span>;
 }
-
-function Toast({msg}){
-  if(!msg) return null;
-  return <div className="toast">{msg}</div>;
+function JenisPill({k}){
+  const j=ALL_JENIS.find(x=>x.key===k);
+  if(!j) return null;
+  return <span className={`jenis-pill ${j.cls}`}>{j.icon} {j.label}</span>;
 }
-
+function Toast({msg}){ return msg?<div className="toast">{msg}</div>:null; }
 function StatTile({label,value,unit,cls}){
   return(
     <div className={`stat-tile ${cls}`}>
@@ -268,106 +359,157 @@ function StatTile({label,value,unit,cls}){
     </div>
   );
 }
-
 function ProgRow({label,val,total,color,icon}){
-  const pct = total ? val/total : 0;
+  const pct=total?val/total:0;
   return(
     <div className="prog-row">
       <div className="prog-header">
         <span style={{color,fontWeight:600}}>{icon} {label}</span>
-        <span style={{color:'var(--muted)',fontSize:12}}>{fmtKg(val)} ({(pct*100).toFixed(1)}%)</span>
+        <span style={{color:'var(--muted)'}}>{fmtKg(val)} ({(pct*100).toFixed(1)}%)</span>
       </div>
-      <div className="prog-bar">
-        <div className="prog-fill" style={{width:`${pct*100}%`,background:color}}/>
-      </div>
+      <div className="prog-bar"><div className="prog-fill" style={{width:`${pct*100}%`,background:color}}/></div>
     </div>
   );
 }
-
-// ── Selector row ────────────────────────────────────────────
 function MonthSelector({bulan,setBulan,tahun,setTahun}){
-  const selStyle={background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,color:'var(--text)',padding:'7px 12px',fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:'none',width:'auto'};
+  const ss={background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,color:'var(--text)',padding:'7px 12px',fontFamily:"'DM Sans',sans-serif",fontSize:13,outline:'none',width:'auto'};
   return(
     <div style={{display:'flex',gap:10,marginBottom:18,alignItems:'center'}}>
-      <select value={bulan} onChange={e=>setBulan(Number(e.target.value))} style={selStyle}>
+      <select value={bulan} onChange={e=>setBulan(Number(e.target.value))} style={ss}>
         {BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}
       </select>
-      <select value={tahun} onChange={e=>setTahun(Number(e.target.value))} style={selStyle}>
+      <select value={tahun} onChange={e=>setTahun(Number(e.target.value))} style={ss}>
         {TAHUN_OPT.map(y=><option key={y}>{y}</option>)}
       </select>
     </div>
   );
 }
 
-// ── Page: Input ─────────────────────────────────────────────
+// ── Page: Input ────────────────────────────────────────────
 function PageInput({form,setField,onSubmit,onReset}){
-  const total = Number(form.organik||0)+Number(form.anorganik||0);
+  const totOrg   = (+form.daun||0)+(+form.makan||0);
+  const totAnorg = (+form.kertas||0)+(+form.plastik||0)+(+form.lain||0);
+  const totAll   = totOrg+totAnorg;
+
+  const JenisCard = ({j, isAnorg}) => (
+    <div className="jenis-field" style={{borderColor: (+form[j.key]>0)?j.color:'var(--border)'}}>
+      <div className="jenis-label" style={{color:j.color}}>{j.icon} {j.label}</div>
+      <input
+        type="number" min="0" step="0.01" placeholder="0.00"
+        className="jenis-input"
+        value={form[j.key]}
+        onChange={e=>setField(j.key, e.target.value)}
+      />
+      <div className="jenis-unit">kg</div>
+    </div>
+  );
+
   return(
     <>
       {/* Tanggal */}
       <div className="card">
         <div className="card-title">🗓 Informasi Tanggal</div>
-        <div className="field" style={{maxWidth:260}}>
+        <div style={{maxWidth:260}}>
           <label>Tanggal Pencatatan *</label>
           <input type="date" value={form.tanggal} onChange={e=>setField('tanggal',e.target.value)}/>
         </div>
       </div>
 
-      {/* Organik & Anorganik */}
-      <div className="grid2">
-        <div className="card">
-          <div className="card-title">🌿 Sampah Organik <span className="badge badge-green">Organik</span></div>
-          <div className="field">
-            <label>Volume (kg) *</label>
-            <input type="number" min="0" step="0.01" placeholder="0.00" value={form.organik} onChange={e=>setField('organik',e.target.value)}/>
-          </div>
-          <div className="field">
-            <label>Metode Pengelolaan *</label>
-            <select value={form.pengelolaan_organik} onChange={e=>setField('pengelolaan_organik',e.target.value)}>
-              {PENGELOLAAN.map(p=><option key={p}>{p}</option>)}
-            </select>
-          </div>
-          <div className="infobox infobox-green">
-            <strong style={{color:'var(--accent1)'}}>♻ Komposting</strong> — Sisa makanan, daun, limbah kebun<br/>
-            <strong style={{color:'var(--blue)'}}>🏦 Bank Sampah</strong> — Organik bernilai ekonomi<br/>
-            <strong style={{color:'var(--accent3)'}}>🗑 TPA</strong> — Sisa yang tidak dapat dikelola
+      {/* Organik */}
+      <div className="card">
+        <div className="card-title">
+          🌿 Sampah Organik
+          <span className="badge badge-green">Organik</span>
+          {totOrg>0 && <span style={{marginLeft:'auto',fontSize:13,color:'var(--accent1)',fontWeight:700}}>{fmtKg(totOrg)}</span>}
+        </div>
+        <div className="jenis-row">
+          {JENIS_ORGANIK.map(j=><JenisCard key={j.key} j={j}/>)}
+          {/* total placeholder */}
+          <div className="jenis-field" style={{background:'rgba(93,189,106,.06)',borderColor:'rgba(93,189,106,.2)'}}>
+            <div className="jenis-label" style={{color:'var(--accent1)'}}>📊 Sub-total</div>
+            <div style={{fontSize:18,fontWeight:700,fontFamily:'Syne,sans-serif',color:'var(--white)',padding:'4px 0'}}>{fmt(totOrg)}</div>
+            <div className="jenis-unit">kg</div>
           </div>
         </div>
+        <div style={{marginTop:14}}>
+          <label>Metode Pengelolaan Organik *</label>
+          <select value={form.pengelolaan_organik} onChange={e=>setField('pengelolaan_organik',e.target.value)}>
+            {PENGELOLAAN.map(p=><option key={p}>{p}</option>)}
+          </select>
+        </div>
+        <div className="infobox infobox-green" style={{marginTop:12}}>
+          <strong style={{color:'var(--accent1)'}}>🍃 Daun</strong> — Daun kering, ranting, potongan tanaman &nbsp;|&nbsp;
+          <strong style={{color:'var(--teal)'}}>🍱 Sisa Makanan</strong> — Limbah dapur, sisa konsumsi
+        </div>
+      </div>
 
-        <div className="card">
-          <div className="card-title">🧴 Sampah Anorganik <span className="badge badge-amber">Anorganik</span></div>
-          <div className="field">
-            <label>Volume (kg) *</label>
-            <input type="number" min="0" step="0.01" placeholder="0.00" value={form.anorganik} onChange={e=>setField('anorganik',e.target.value)}/>
-          </div>
-          <div className="field">
-            <label>Metode Pengelolaan *</label>
-            <select value={form.pengelolaan_anorganik} onChange={e=>setField('pengelolaan_anorganik',e.target.value)}>
-              {PENGELOLAAN.map(p=><option key={p}>{p}</option>)}
-            </select>
-          </div>
-          <div className="infobox infobox-amber">
-            <strong style={{color:'var(--blue)'}}>🏦 Bank Sampah</strong> — Plastik, kertas, logam, kaca<br/>
-            <strong style={{color:'var(--accent3)'}}>🗑 TPA</strong> — Sampah campuran/residu<br/>
-            <strong style={{color:'var(--accent1)'}}>♻ Komposting</strong> — Jika dapat diproses ulang
-          </div>
+      {/* Anorganik */}
+      <div className="card">
+        <div className="card-title">
+          🧴 Sampah Anorganik
+          <span className="badge badge-amber">Anorganik</span>
+          {totAnorg>0 && <span style={{marginLeft:'auto',fontSize:13,color:'var(--accent2)',fontWeight:700}}>{fmtKg(totAnorg)}</span>}
+        </div>
+        <div className="anorg-row">
+          {JENIS_ANORGANIK.map(j=><JenisCard key={j.key} j={j}/>)}
+        </div>
+        <div style={{marginTop:10,background:'rgba(201,168,76,.05)',border:'1px solid rgba(201,168,76,.15)',borderRadius:10,padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <span style={{fontSize:12,color:'var(--muted)'}}>Sub-total Anorganik</span>
+          <span style={{fontSize:18,fontWeight:700,fontFamily:'Syne,sans-serif',color:'var(--white)'}}>{fmtKg(totAnorg)}</span>
+        </div>
+        <div style={{marginTop:14}}>
+          <label>Metode Pengelolaan Anorganik *</label>
+          <select value={form.pengelolaan_anorganik} onChange={e=>setField('pengelolaan_anorganik',e.target.value)}>
+            {PENGELOLAAN.map(p=><option key={p}>{p}</option>)}
+          </select>
+        </div>
+        <div className="infobox infobox-amber" style={{marginTop:12}}>
+          <strong style={{color:'var(--accent2)'}}>📦 Kertas/Kardus</strong> — Kertas, kardus, koran &nbsp;|&nbsp;
+          <strong style={{color:'var(--blue)'}}>🧴 Plastik</strong> — Botol, kantong, kemasan &nbsp;|&nbsp;
+          <strong style={{color:'var(--purple)'}}>🔩 Lain-lain</strong> — Kaca, besi, logam, dll
         </div>
       </div>
 
       {/* Keterangan & Submit */}
       <div className="card">
         <div className="card-title">📝 Keterangan & Simpan</div>
-        <div className="field">
+        <div style={{marginBottom:14}}>
           <label>Catatan (opsional)</label>
           <textarea rows={2} placeholder="Misal: musim hujan, acara khusus..." value={form.keterangan} onChange={e=>setField('keterangan',e.target.value)}/>
         </div>
-        {total > 0 && (
+        {totAll>0 && (
           <div className="preview">
-            <div className="preview-title">Pratinjau</div>
-            <div className="preview-row">
-              <span>🌿 Organik: <strong style={{color:'var(--accent1)'}}>{fmt(form.organik)} kg</strong></span>
-              <span>🧴 Anorganik: <strong style={{color:'var(--accent2)'}}>{fmt(form.anorganik)} kg</strong></span>
-              <span>📦 Total: <strong style={{color:'var(--white)'}}>{fmt(total)} kg</strong></span>
+            <div className="preview-title">Pratinjau Data</div>
+            <div className="preview-grid">
+              <div className="preview-item">
+                <span style={{color:'var(--muted)',fontSize:11}}>🍃 Daun</span>
+                <div className="pv" style={{color:'var(--accent1)'}}>{fmtKg(form.daun)}</div>
+              </div>
+              <div className="preview-item">
+                <span style={{color:'var(--muted)',fontSize:11}}>🍱 Sisa Makanan</span>
+                <div className="pv" style={{color:'var(--teal)'}}>{fmtKg(form.makan)}</div>
+              </div>
+              <div className="preview-item">
+                <span style={{color:'var(--muted)',fontSize:11}}>📦 Kertas/Kardus</span>
+                <div className="pv" style={{color:'var(--accent2)'}}>{fmtKg(form.kertas)}</div>
+              </div>
+              <div className="preview-item">
+                <span style={{color:'var(--muted)',fontSize:11}}>🧴 Plastik</span>
+                <div className="pv" style={{color:'var(--blue)'}}>{fmtKg(form.plastik)}</div>
+              </div>
+              <div className="preview-item">
+                <span style={{color:'var(--muted)',fontSize:11}}>🔩 Lain-lain</span>
+                <div className="pv" style={{color:'var(--purple)'}}>{fmtKg(form.lain)}</div>
+              </div>
+              <div className="preview-item">
+                <span style={{color:'var(--muted)',fontSize:11}}>📊 Total</span>
+                <div className="pv" style={{color:'var(--white)'}}>{fmtKg(totAll)}</div>
+              </div>
+            </div>
+            <div className="preview-total">
+              🌿 Organik: <strong style={{color:'var(--accent1)'}}>{fmtKg(totOrg)}</strong>
+              &nbsp;&nbsp;🧴 Anorganik: <strong style={{color:'var(--accent2)'}}>{fmtKg(totAnorg)}</strong>
+              &nbsp;&nbsp;📦 Total: <strong style={{color:'var(--white)'}}>{fmtKg(totAll)}</strong>
             </div>
           </div>
         )}
@@ -380,13 +522,25 @@ function PageInput({form,setField,onSubmit,onReset}){
   );
 }
 
-// ── Page: Data ──────────────────────────────────────────────
+// ── Page: Data ─────────────────────────────────────────────
 function PageData({records,onDelete}){
   const [bulan,setBulan]=useState(TODAY.getMonth());
   const [tahun,setTahun]=useState(TODAY.getFullYear());
-  const filtered=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulan&&d.getFullYear()===tahun;}).sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
-  const totO=filtered.reduce((s,r)=>s+ +r.organik,0);
-  const totA=filtered.reduce((s,r)=>s+ +r.anorganik,0);
+  const filtered=records
+    .filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulan&&d.getFullYear()===tahun;})
+    .sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
+
+  const totals = {
+    daun:   filtered.reduce((s,r)=>s+(+r.daun||0),0),
+    makan:  filtered.reduce((s,r)=>s+(+r.makan||0),0),
+    kertas: filtered.reduce((s,r)=>s+(+r.kertas||0),0),
+    plastik:filtered.reduce((s,r)=>s+(+r.plastik||0),0),
+    lain:   filtered.reduce((s,r)=>s+(+r.lain||0),0),
+  };
+  const totOrg  = totals.daun+totals.makan;
+  const totAnorg= totals.kertas+totals.plastik+totals.lain;
+  const totAll  = totOrg+totAnorg;
+
   return(
     <>
       <MonthSelector bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun}/>
@@ -400,31 +554,63 @@ function PageData({records,onDelete}){
         ):(
           <div className="tbl-wrap">
             <table>
-              <thead><tr>
-                <th>Tanggal</th><th>Organik (kg)</th><th>Anorganik (kg)</th><th>Total (kg)</th>
-                <th>Kelola Organik</th><th>Kelola Anorganik</th><th>Keterangan</th><th></th>
-              </tr></thead>
+              <thead>
+                <tr>
+                  <th rowSpan={2}>Tanggal</th>
+                  <th colSpan={3} style={{textAlign:'center',borderBottom:'none',background:'rgba(93,189,106,.06)'}}>🌿 Organik</th>
+                  <th colSpan={4} style={{textAlign:'center',borderBottom:'none',background:'rgba(201,168,76,.06)'}}>🧴 Anorganik</th>
+                  <th rowSpan={2}>Total (kg)</th>
+                  <th rowSpan={2}>Klola Org.</th>
+                  <th rowSpan={2}>Klola Anorg.</th>
+                  <th rowSpan={2}></th>
+                </tr>
+                <tr>
+                  <th style={{color:'var(--accent1)'}}>Daun</th>
+                  <th style={{color:'var(--teal)'}}>Sisa Makan</th>
+                  <th style={{color:'var(--accent1)'}}>Sub-total</th>
+                  <th style={{color:'var(--accent2)'}}>Kertas</th>
+                  <th style={{color:'var(--blue)'}}>Plastik</th>
+                  <th style={{color:'var(--purple)'}}>Lain-lain</th>
+                  <th style={{color:'var(--accent2)'}}>Sub-total</th>
+                </tr>
+              </thead>
               <tbody>
-                {filtered.map(r=>(
-                  <tr key={r.id}>
-                    <td style={{fontWeight:600,color:'var(--white)'}}>{new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}</td>
-                    <td style={{color:'var(--accent1)'}}>{fmt(r.organik)}</td>
-                    <td style={{color:'var(--accent2)'}}>{fmt(r.anorganik)}</td>
-                    <td style={{fontWeight:600}}>{fmt(+r.organik+ +r.anorganik)}</td>
-                    <td><Pill p={r.pengelolaan_organik}/></td>
-                    <td><Pill p={r.pengelolaan_anorganik}/></td>
-                    <td style={{color:'var(--muted)',fontSize:12}}>{r.keterangan||'—'}</td>
-                    <td><button className="btn btn-danger" onClick={()=>onDelete(r.id)}>✕</button></td>
-                  </tr>
-                ))}
+                {filtered.map(r=>{
+                  const org=sumOrganik(r), anorg=sumAnorganik(r);
+                  return(
+                    <tr key={r.id}>
+                      <td style={{fontWeight:600,color:'var(--white)',whiteSpace:'nowrap'}}>
+                        {new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'})}
+                      </td>
+                      <td style={{color:'var(--accent1)'}}>{fmt(r.daun)}</td>
+                      <td style={{color:'var(--teal)'}}>{fmt(r.makan)}</td>
+                      <td style={{fontWeight:600,color:'var(--accent1)'}}>{fmt(org)}</td>
+                      <td style={{color:'var(--accent2)'}}>{fmt(r.kertas)}</td>
+                      <td style={{color:'var(--blue)'}}>{fmt(r.plastik)}</td>
+                      <td style={{color:'var(--purple)'}}>{fmt(r.lain)}</td>
+                      <td style={{fontWeight:600,color:'var(--accent2)'}}>{fmt(anorg)}</td>
+                      <td style={{fontWeight:700,color:'var(--white)'}}>{fmt(org+anorg)}</td>
+                      <td><Pill p={r.pengelolaan_organik}/></td>
+                      <td><Pill p={r.pengelolaan_anorganik}/></td>
+                      <td><button className="btn btn-danger" onClick={()=>onDelete(r.id)}>✕</button></td>
+                    </tr>
+                  );
+                })}
               </tbody>
-              <tfoot><tr>
-                <td style={{fontWeight:700,fontSize:11,textTransform:'uppercase',color:'var(--muted)'}}>TOTAL</td>
-                <td style={{fontWeight:700,color:'var(--accent1)'}}>{fmt(totO)}</td>
-                <td style={{fontWeight:700,color:'var(--accent2)'}}>{fmt(totA)}</td>
-                <td style={{fontWeight:700,color:'var(--white)'}}>{fmt(totO+totA)}</td>
-                <td colSpan={4}/>
-              </tr></tfoot>
+              <tfoot>
+                <tr className="subtotal-row">
+                  <td>TOTAL</td>
+                  <td style={{color:'var(--accent1)'}}>{fmt(totals.daun)}</td>
+                  <td style={{color:'var(--teal)'}}>{fmt(totals.makan)}</td>
+                  <td style={{color:'var(--accent1)',fontWeight:700}}>{fmt(totOrg)}</td>
+                  <td style={{color:'var(--accent2)'}}>{fmt(totals.kertas)}</td>
+                  <td style={{color:'var(--blue)'}}>{fmt(totals.plastik)}</td>
+                  <td style={{color:'var(--purple)'}}>{fmt(totals.lain)}</td>
+                  <td style={{color:'var(--accent2)',fontWeight:700}}>{fmt(totAnorg)}</td>
+                  <td style={{color:'var(--white)',fontWeight:700}}>{fmt(totAll)}</td>
+                  <td colSpan={3}/>
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}
@@ -433,63 +619,111 @@ function PageData({records,onDelete}){
   );
 }
 
-// ── Page: Laporan ───────────────────────────────────────────
+// ── Page: Laporan ──────────────────────────────────────────
 function PageLaporan({records}){
   const [bulan,setBulan]=useState(TODAY.getMonth());
   const [tahun,setTahun]=useState(TODAY.getFullYear());
-  const filtered=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulan&&d.getFullYear()===tahun;}).sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
-  const totO=filtered.reduce((s,r)=>s+ +r.organik,0);
-  const totA=filtered.reduce((s,r)=>s+ +r.anorganik,0);
-  const tot=totO+totA;
-  const avg=filtered.length?tot/filtered.length:0;
+  const filtered=records
+    .filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulan&&d.getFullYear()===tahun;})
+    .sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
+
+  const totDaun   =filtered.reduce((s,r)=>s+(+r.daun||0),0);
+  const totMakan  =filtered.reduce((s,r)=>s+(+r.makan||0),0);
+  const totKertas =filtered.reduce((s,r)=>s+(+r.kertas||0),0);
+  const totPlastik=filtered.reduce((s,r)=>s+(+r.plastik||0),0);
+  const totLain   =filtered.reduce((s,r)=>s+(+r.lain||0),0);
+  const totOrg    =totDaun+totMakan;
+  const totAnorg  =totKertas+totPlastik+totLain;
+  const tot       =totOrg+totAnorg;
+  const avg       =filtered.length?tot/filtered.length:0;
+
   const byP={Komposting:0,'Bank Sampah':0,TPA:0};
-  filtered.forEach(r=>{byP[r.pengelolaan_organik]=(byP[r.pengelolaan_organik]||0)+ +r.organik; byP[r.pengelolaan_anorganik]=(byP[r.pengelolaan_anorganik]||0)+ +r.anorganik;});
+  filtered.forEach(r=>{
+    byP[r.pengelolaan_organik]=(byP[r.pengelolaan_organik]||0)+sumOrganik(r);
+    byP[r.pengelolaan_anorganik]=(byP[r.pengelolaan_anorganik]||0)+sumAnorganik(r);
+  });
+
   const last7=[...filtered].slice(-7);
-  const maxB=Math.max(...last7.map(r=>+r.organik+ +r.anorganik),1);
+  const maxB=Math.max(...last7.map(r=>sumTotal(r)),1);
+
   return(
     <>
       <MonthSelector bulan={bulan} setBulan={setBulan} tahun={tahun} setTahun={setTahun}/>
       <div className="sec-title">Ringkasan — {BULAN_FULL[bulan]} {tahun}</div>
-      <div className="grid4">
-        <StatTile label="Total Sampah" value={fmt(tot)} unit="kg" cls="st-green"/>
-        <StatTile label="Rata-rata Harian" value={fmt(avg)} unit="kg/hr" cls="st-amber"/>
-        <StatTile label="Hari Pencatatan" value={filtered.length} unit="hari" cls="st-blue"/>
-        <StatTile label="Ke TPA" value={fmt(byP['TPA'])} unit="kg" cls="st-red"/>
+
+      {/* Stat tiles */}
+      <div className="grid5">
+        <StatTile label="Total Sampah"    value={fmt(tot)}           unit="kg"    cls="st-green"/>
+        <StatTile label="Rata-rata Harian" value={fmt(avg)}          unit="kg/hr" cls="st-amber"/>
+        <StatTile label="Hari Pencatatan" value={filtered.length}    unit="hari"  cls="st-blue"/>
+        <StatTile label="Total Organik"   value={fmt(totOrg)}        unit="kg"    cls="st-teal"/>
+        <StatTile label="Ke TPA"          value={fmt(byP['TPA'])}    unit="kg"    cls="st-red"/>
       </div>
+
       <div className="grid2">
+        {/* Organik breakdown */}
         <div className="card">
-          <div className="sec-title">Komposisi Timbulan</div>
-          <ProgRow label="Organik" val={totO} total={tot} color="var(--accent1)" icon="🌿"/>
-          <ProgRow label="Anorganik" val={totA} total={tot} color="var(--accent2)" icon="🧴"/>
+          <div className="sec-title">🌿 Rincian Sampah Organik</div>
+          <ProgRow label="Daun"         val={totDaun}  total={totOrg} color="var(--accent1)" icon="🍃"/>
+          <ProgRow label="Sisa Makanan" val={totMakan} total={totOrg} color="var(--teal)"    icon="🍱"/>
+          <div style={{marginTop:12,padding:'8px 12px',background:'rgba(93,189,106,.06)',borderRadius:8,fontSize:12,display:'flex',justifyContent:'space-between'}}>
+            <span style={{color:'var(--muted)'}}>Sub-total Organik</span>
+            <strong style={{color:'var(--accent1)'}}>{fmtKg(totOrg)}</strong>
+          </div>
         </div>
+
+        {/* Anorganik breakdown */}
+        <div className="card">
+          <div className="sec-title">🧴 Rincian Sampah Anorganik</div>
+          <ProgRow label="Kertas/Kardus"        val={totKertas}  total={totAnorg} color="var(--accent2)" icon="📦"/>
+          <ProgRow label="Plastik (Botol/Kantong)" val={totPlastik} total={totAnorg} color="var(--blue)"    icon="🧴"/>
+          <ProgRow label="Lain-lain (Kaca/Besi)"  val={totLain}    total={totAnorg} color="var(--purple)"  icon="🔩"/>
+          <div style={{marginTop:12,padding:'8px 12px',background:'rgba(201,168,76,.06)',borderRadius:8,fontSize:12,display:'flex',justifyContent:'space-between'}}>
+            <span style={{color:'var(--muted)'}}>Sub-total Anorganik</span>
+            <strong style={{color:'var(--accent2)'}}>{fmtKg(totAnorg)}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid2">
+        {/* Komposisi total */}
+        <div className="card">
+          <div className="sec-title">Komposisi Keseluruhan</div>
+          <ProgRow label="Organik"   val={totOrg}   total={tot} color="var(--accent1)" icon="🌿"/>
+          <ProgRow label="Anorganik" val={totAnorg} total={tot} color="var(--accent2)" icon="🧴"/>
+        </div>
+
+        {/* Metode pengelolaan */}
         <div className="card">
           <div className="sec-title">Metode Pengelolaan</div>
-          <ProgRow label="Komposting" val={byP['Komposting']} total={tot} color="var(--accent1)" icon="♻"/>
-          <ProgRow label="Bank Sampah" val={byP['Bank Sampah']} total={tot} color="var(--blue)" icon="🏦"/>
-          <ProgRow label="TPA" val={byP['TPA']} total={tot} color="var(--accent3)" icon="🗑"/>
+          <ProgRow label="Komposting"  val={byP['Komposting']}  total={tot} color="var(--accent1)" icon="♻"/>
+          <ProgRow label="Bank Sampah" val={byP['Bank Sampah']} total={tot} color="var(--blue)"    icon="🏦"/>
+          <ProgRow label="TPA"         val={byP['TPA']}         total={tot} color="var(--accent3)" icon="🗑"/>
         </div>
       </div>
+
+      {/* Bar chart tren */}
       {last7.length>0&&(
         <div className="card">
           <div className="sec-title">Tren 7 Entri Terakhir</div>
           <div className="bar-chart">
             {last7.map((r,i)=>{
-              const t=+r.organik+ +r.anorganik;
-              const h=Math.max((t/maxB)*66,4);
-              const ho=Math.max((+r.organik/maxB)*66,2);
+              const org=sumOrganik(r), anorg=sumAnorganik(r), total=org+anorg;
+              const ho=Math.max((org/maxB)*66,2);
+              const ha=Math.max((anorg/maxB)*66,2);
               return(
                 <div key={i} className="bar-col">
-                  <span className="bar-val">{fmt(t)}</span>
+                  <span className="bar-val">{fmt(total)}</span>
                   <div className="bar-stack">
                     <div className="bar" style={{height:ho,background:'var(--accent1)'}}/>
-                    <div className="bar" style={{height:h-ho,background:'var(--accent2)'}}/>
+                    <div className="bar" style={{height:ha,background:'var(--accent2)'}}/>
                   </div>
                   <span className="bar-lbl">{new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}</span>
                 </div>
               );
             })}
           </div>
-          <div style={{display:'flex',gap:14,marginTop:8}}>
+          <div style={{display:'flex',gap:14,marginTop:8,flexWrap:'wrap'}}>
             <span style={{fontSize:11,color:'var(--accent1)'}}>■ Organik</span>
             <span style={{fontSize:11,color:'var(--accent2)'}}>■ Anorganik</span>
           </div>
@@ -499,16 +733,17 @@ function PageLaporan({records}){
   );
 }
 
-// ── Page: Ekspor ────────────────────────────────────────────
+// ── Page: Ekspor ───────────────────────────────────────────
 function PageEkspor({records,showToast}){
   const [bulan,setBulan]=useState(TODAY.getMonth());
   const [tahun,setTahun]=useState(TODAY.getFullYear());
   const filtered=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulan&&d.getFullYear()===tahun;});
-  const tot=filtered.reduce((s,r)=>s+ +r.organik+ +r.anorganik,0);
+  const tot=filtered.reduce((s,r)=>s+sumTotal(r),0);
   const sheets=[
-    {icon:'📋',name:'Sheet 1: Data Harian',desc:'Semua entri harian + formula total otomatis'},
-    {icon:'📊',name:'Sheet 2: Rekap Pengelolaan',desc:'Ringkasan per metode + persentase'},
-    {icon:'📄',name:'Sheet 3: Laporan Bulanan',desc:'Laporan formal siap cetak/arsip'},
+    {icon:'📋',name:'Sheet 1: Data Harian',      desc:'Entri harian detail per jenis sampah + formula total otomatis'},
+    {icon:'📊',name:'Sheet 2: Rekap Per Jenis',   desc:'Ringkasan Daun, Sisa Makanan, Kertas, Plastik, Lain-lain + persentase'},
+    {icon:'♻', name:'Sheet 3: Rekap Pengelolaan', desc:'Volume per metode: Komposting / Bank Sampah / TPA'},
+    {icon:'📄',name:'Sheet 4: Laporan Bulanan',   desc:'Laporan formal lengkap 4 bagian, siap cetak & arsip'},
   ];
   return(
     <>
@@ -522,7 +757,7 @@ function PageEkspor({records,showToast}){
           </div>
         </div>
         <div style={{background:'rgba(0,0,0,.2)',borderRadius:10,padding:'14px 16px',marginBottom:18}}>
-          <div className="sec-title">Isi File Excel (.xlsx)</div>
+          <div className="sec-title">Isi File Excel (.xlsx) — 4 Sheet</div>
           {sheets.map(x=>(
             <div key={x.name} className="sheet-item">
               <span className="sheet-icon">{x.icon}</span>
@@ -534,7 +769,7 @@ function PageEkspor({records,showToast}){
           ))}
         </div>
         {filtered.length===0?(
-          <div className="infobox infobox-red">⚠ Tidak ada data untuk periode ini. Silakan input data terlebih dahulu.</div>
+          <div className="infobox infobox-red">⚠ Tidak ada data untuk periode ini.</div>
         ):(
           <button className="btn btn-primary" style={{fontSize:14,padding:'11px 22px'}} onClick={()=>{
             try{ exportExcel(records,bulan,tahun); showToast('✅ Laporan Excel berhasil diunduh!'); }
@@ -545,10 +780,10 @@ function PageEkspor({records,showToast}){
       <div className="card">
         <div className="sec-title">Tips Penggunaan</div>
         <div style={{fontSize:13,color:'var(--muted)',lineHeight:2}}>
-          📌 Input data setiap hari untuk laporan yang akurat<br/>
+          📌 Isi semua jenis sampah yang tersedia setiap harinya<br/>
+          📌 Jenis yang tidak ada biarkan kosong / 0 — tidak akan mempengaruhi total<br/>
           📌 Ekspor di akhir bulan untuk pengarsipan rutin<br/>
           📌 File .xlsx bisa langsung dibuka di Microsoft Excel atau Google Sheets<br/>
-          📌 Untuk Google Sheets: File → Import → Upload file xlsx<br/>
           📌 Data tersimpan di sesi browser — ekspor sebelum menutup halaman
         </div>
       </div>
@@ -556,44 +791,52 @@ function PageEkspor({records,showToast}){
   );
 }
 
-// ── Sidebar ─────────────────────────────────────────────────
+// ── Sidebar & App ──────────────────────────────────────────
 const NAV=[
   {id:'input',icon:'📥',label:'Input Harian'},
-  {id:'data',icon:'📋',label:'Data Tersimpan'},
+  {id:'data', icon:'📋',label:'Data Tersimpan'},
   {id:'laporan',icon:'📊',label:'Laporan Bulanan'},
   {id:'ekspor',icon:'📤',label:'Ekspor Excel'},
 ];
-const PAGE_TITLE={input:'📥 Input Timbulan Harian',data:'📋 Data Tersimpan',laporan:'📊 Laporan Bulanan',ekspor:'📤 Ekspor Spreadsheet'};
+const PAGE_TITLE={
+  input:'📥 Input Timbulan Harian',
+  data:'📋 Data Tersimpan',
+  laporan:'📊 Laporan Bulanan',
+  ekspor:'📤 Ekspor Spreadsheet',
+};
 
-// ── Main App ─────────────────────────────────────────────────
+const EMPTY_FORM = {
+  tanggal: TODAY.toISOString().split('T')[0],
+  daun:'', makan:'',
+  kertas:'', plastik:'', lain:'',
+  pengelolaan_organik:'Komposting',
+  pengelolaan_anorganik:'Bank Sampah',
+  keterangan:'',
+};
+
 function App(){
   const [page,setPage]=useState('input');
   const [records,setRecords]=useState([]);
   const [toast,setToast]=useState(null);
-  const [form,setForm]=useState({
-    tanggal:TODAY.toISOString().split('T')[0],
-    organik:'',anorganik:'',
-    pengelolaan_organik:'Komposting',
-    pengelolaan_anorganik:'Bank Sampah',
-    keterangan:'',
-  });
+  const [form,setForm]=useState({...EMPTY_FORM});
 
-  const showToast=msg=>{ setToast(msg); setTimeout(()=>setToast(null),2800); };
+  const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),2800);};
   const setField=(k,v)=>setForm(f=>({...f,[k]:v}));
 
   const onSubmit=()=>{
-    if(!form.tanggal||!form.organik||!form.anorganik){ showToast('⚠️ Lengkapi semua field wajib'); return; }
-    if(+form.organik<0||+form.anorganik<0){ showToast('⚠️ Volume tidak boleh negatif'); return; }
+    if(!form.tanggal){ showToast('⚠️ Pilih tanggal terlebih dahulu'); return; }
+    const totOrg=(+form.daun||0)+(+form.makan||0);
+    const totAnorg=(+form.kertas||0)+(+form.plastik||0)+(+form.lain||0);
+    if(totOrg===0 && totAnorg===0){ showToast('⚠️ Isi minimal satu jenis sampah'); return; }
     setRecords(r=>[...r,{...form,id:Date.now()}]);
-    setForm(f=>({...f,organik:'',anorganik:'',keterangan:''}));
+    setForm({...EMPTY_FORM,tanggal:form.tanggal});
     showToast('✅ Data berhasil disimpan!');
   };
-  const onReset=()=>setForm(f=>({...f,organik:'',anorganik:'',keterangan:''}));
-  const onDelete=id=>{ setRecords(r=>r.filter(x=>x.id!==id)); showToast('🗑 Data dihapus'); };
+  const onReset=()=>setForm({...EMPTY_FORM,tanggal:form.tanggal});
+  const onDelete=id=>{setRecords(r=>r.filter(x=>x.id!==id));showToast('🗑 Data dihapus');};
 
   return(
     <>
-      {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-logo">
           <h2>♻ SampahPintar</h2>
@@ -606,24 +849,21 @@ function App(){
         ))}
         <div className="sidebar-footer">
           <div className="label">Total data tersimpan</div>
-          <div className="count">{records.length} <span style={{fontSize:12}}>entri</span></div>
+          <div className="count">{records.length}<span style={{fontSize:12}}> entri</span></div>
         </div>
       </div>
-
-      {/* Main content */}
       <div className="main">
         <div className="topbar">
           <h1>{PAGE_TITLE[page]}</h1>
           <span className="date">{TODAY.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>
         </div>
         <div className="content">
-          {page==='input'  && <PageInput form={form} setField={setField} onSubmit={onSubmit} onReset={onReset}/>}
-          {page==='data'   && <PageData records={records} onDelete={onDelete}/>}
-          {page==='laporan'&& <PageLaporan records={records}/>}
-          {page==='ekspor' && <PageEkspor records={records} showToast={showToast}/>}
+          {page==='input'   && <PageInput   form={form} setField={setField} onSubmit={onSubmit} onReset={onReset}/>}
+          {page==='data'    && <PageData    records={records} onDelete={onDelete}/>}
+          {page==='laporan' && <PageLaporan records={records}/>}
+          {page==='ekspor'  && <PageEkspor  records={records} showToast={showToast}/>}
         </div>
       </div>
-
       <Toast msg={toast}/>
     </>
   );

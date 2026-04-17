@@ -6,7 +6,7 @@
 <meta http-equiv="pragma" content="no-cache"/>
 <meta http-equiv="expires" content="0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SampahPintar ♻ — UPT PLN Palembang v3</title>
+<title>SampahPintar ♻ — UPT PLN Palembang v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -523,19 +523,46 @@ function MapSidebar({sampahLokasi,filterULTG,setFilterULTG,selectedId,setSelecte
 }
 
 // ══════════════════════════════════════════════════════════════
-// HALAMAN PETA (konten kanan)
+// HALAMAN PETA (konten kanan) — dengan toggle Normal/Dark mode
 // ══════════════════════════════════════════════════════════════
-function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,setSelectedId,onInputClick}){
-  const leafRef=useRef(null);
-  const markersRef=useRef({});
 
+// Tile layer options
+const MAP_TILES = {
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    label: '🌙 Dark',
+    attr: '© OpenStreetMap © CARTO',
+  },
+  normal: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    label: '☀️ Normal',
+    attr: '© OpenStreetMap contributors',
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    label: '🛰 Satelit',
+    attr: '© Esri © DigitalGlobe',
+  },
+};
+
+function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,setSelectedId,onInputClick}){
+  const leafRef   = useRef(null);
+  const markersRef= useRef({});
+  const tileRef   = useRef(null);
+  const [mapMode, setMapMode] = useState('dark');
+
+  // Init map sekali
   useEffect(()=>{
     if(leafRef.current)return;
     const L=window.L;
     const map=L.map('leaflet-map',{center:[-2.98,104.76],zoom:11});
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
-      attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19
+
+    // Default tile: dark
+    const tile=L.tileLayer(MAP_TILES.dark.url,{
+      attribution: MAP_TILES.dark.attr,
+      subdomains:'abcd',maxZoom:19
     }).addTo(map);
+    tileRef.current=tile;
     leafRef.current=map;
 
     DATA_LOKASI.forEach(lok=>{
@@ -572,6 +599,21 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
     return()=>{if(leafRef.current){leafRef.current.remove();leafRef.current=null;}};
   },[]);
 
+  // Ganti tile saat mapMode berubah
+  useEffect(()=>{
+    if(!leafRef.current||!tileRef.current)return;
+    const L=window.L;
+    const cfg=MAP_TILES[mapMode];
+    leafRef.current.removeLayer(tileRef.current);
+    const newTile=L.tileLayer(cfg.url,{
+      attribution:cfg.attr,
+      subdomains:'abcd',maxZoom:19
+    }).addTo(leafRef.current);
+    // pastikan tile di bawah marker
+    newTile.setZIndex(0);
+    tileRef.current=newTile;
+  },[mapMode]);
+
   // Fly to selected
   useEffect(()=>{
     if(!selectedId||!leafRef.current)return;
@@ -598,10 +640,50 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
   return(
     <div className="content-map">
       <div id="leaflet-map"/>
+
+      {/* ── Toggle Normal / Dark / Satelit ── */}
+      <div style={{
+        position:'absolute',top:10,right:10,zIndex:900,
+        display:'flex',gap:4,
+        background:'rgba(20,32,24,.92)',
+        border:'1px solid var(--border)',
+        borderRadius:10,padding:4,
+        boxShadow:'0 4px 16px rgba(0,0,0,.4)',
+        backdropFilter:'blur(8px)',
+      }}>
+        {Object.entries(MAP_TILES).map(([key,cfg])=>(
+          <button key={key} onClick={()=>setMapMode(key)}
+            style={{
+              padding:'5px 11px',borderRadius:7,border:'none',
+              fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,
+              cursor:'pointer',transition:'all .2s',
+              background: mapMode===key
+                ? (key==='dark'?'#1e3a4a':key==='normal'?'#2a7a3a':'#1a3a5a')
+                : 'transparent',
+              color: mapMode===key
+                ? (key==='dark'?'#7ec8ff':key==='normal'?'#5dbd6a':'#a8d8ff')
+                : 'var(--muted)',
+              boxShadow: mapMode===key?'0 2px 8px rgba(0,0,0,.3)':'none',
+            }}>
+            {cfg.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Legenda ── */}
       <div className="map-legend">
         <div style={{fontSize:8,fontWeight:700,color:'var(--muted)',letterSpacing:1,textTransform:'uppercase',marginBottom:6}}>LEGENDA</div>
-        {[{c:'#10b981',r:false,l:'Kantor UPT'},{c:'#f59e0b',r:false,l:'ULTG'},{c:'#1e90ff',r:true,l:'GI'},{c:'#8b5cf6',r:true,l:'GIS'},{c:'#ec4899',r:true,l:'GITET'}].map(x=>(
-          <div key={x.l} className="leg-i"><div style={{width:9,height:9,background:x.c,borderRadius:x.r?'50%':'3px',border:'1.5px solid rgba(255,255,255,.3)',flexShrink:0}}/>{x.l}</div>
+        {[
+          {c:'#10b981',r:false,l:'Kantor UPT'},
+          {c:'#f59e0b',r:false,l:'ULTG'},
+          {c:'#1e90ff',r:true, l:'GI'},
+          {c:'#8b5cf6',r:true, l:'GIS'},
+          {c:'#ec4899',r:true, l:'GITET'},
+        ].map(x=>(
+          <div key={x.l} className="leg-i">
+            <div style={{width:9,height:9,background:x.c,borderRadius:x.r?'50%':'3px',border:'1.5px solid rgba(255,255,255,.3)',flexShrink:0}}/>
+            {x.l}
+          </div>
         ))}
       </div>
     </div>

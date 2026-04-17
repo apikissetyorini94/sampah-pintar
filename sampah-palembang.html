@@ -4,7 +4,6 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SampahPintar ♻ — UPT PLN Palembang</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -19,220 +18,253 @@
   --g1:#5dbd6a;--g2:#c9a84c;--g3:#e07050;
   --c-daun:#5dbd6a;--c-makan:#2dd4bf;
   --c-kertas:#c9a84c;--c-plastik:#5aa8d6;--c-lain:#a78bfa;
-  --pln:#1e90ff;--ultg:#f59e0b;--kantor:#10b981;
-  --ai:#7c6af7;
+  --pln:#1e90ff;--ultg:#f59e0b;--kantor:#10b981;--ai:#7c6af7;
   --text:#d4e6d5;--muted:#7a9e7e;--white:#f0f7f1;
 }
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;min-height:100vh}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.6;min-height:100vh;overflow:hidden}
 h1,h2,h3{font-family:'Syne',sans-serif}
-#root{display:flex;min-height:100vh}
+#root{display:flex;height:100vh;overflow:hidden}
 select option{background:var(--card)}
 input[type=number]::-webkit-inner-spin-button{opacity:.3}
 
-/* Sidebar */
-.sidebar{width:230px;min-width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}
-.sb-logo{padding:0 18px 18px;border-bottom:1px solid var(--border);margin-bottom:12px}
-.sb-logo h2{font-size:14px;font-weight:800;color:var(--g1);line-height:1.2}
-.sb-logo .sub1{font-size:10px;color:var(--pln);letter-spacing:1px;text-transform:uppercase;font-weight:700}
-.sb-logo .sub2{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:1px}
-.nav-item{display:flex;align-items:center;gap:9px;padding:9px 18px;cursor:pointer;color:var(--muted);font-size:12px;font-weight:500;border-left:3px solid transparent;transition:all .15s;user-select:none}
+/* ══ LAYOUT UTAMA: 3 kolom ══ */
+/* Kiri: sidebar navigasi sempit */
+.nav-sidebar{
+  width:200px;min-width:200px;background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  height:100vh;overflow-y:auto;flex-shrink:0;
+}
+/* Tengah: panel peta/lokasi */
+.map-sidebar{
+  width:260px;min-width:260px;background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  height:100vh;overflow:hidden;flex-shrink:0;
+}
+/* Kanan: konten utama */
+.main-area{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0}
+
+/* ── Nav sidebar ── */
+.sb-logo{padding:16px 16px 14px;border-bottom:1px solid var(--border)}
+.sb-logo h2{font-size:13px;font-weight:800;color:var(--g1);line-height:1.2}
+.sb-logo .org{font-size:9px;color:var(--pln);letter-spacing:1px;text-transform:uppercase;font-weight:700;margin-top:2px}
+.sb-logo .sub{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.nav-sec{padding:10px 14px 3px;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;color:var(--muted);font-size:11px;font-weight:500;border-left:3px solid transparent;transition:all .15s;user-select:none}
 .nav-item:hover{color:var(--text);background:rgba(93,189,106,.06)}
 .nav-item.active{color:var(--g1);border-left-color:var(--g1);background:rgba(93,189,106,.1)}
-.nav-peta.active{color:var(--pln)!important;border-left-color:var(--pln)!important;background:rgba(30,144,255,.1)!important}
 .nav-ai.active{color:var(--ai)!important;border-left-color:var(--ai)!important;background:rgba(124,106,247,.1)!important}
-.nav-section{padding:8px 18px 4px;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:4px}
-.sb-foot{margin-top:auto;padding:16px 18px;border-top:1px solid var(--border)}
-.sb-foot .lbl{font-size:10px;color:var(--muted)}
-.sb-foot .cnt{font-size:18px;font-family:'Syne',sans-serif;font-weight:700;color:var(--g1)}
+.sb-stats{margin-top:auto;padding:12px 14px;border-top:1px solid var(--border)}
+.sb-stats .row{display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px}
+.sb-stats .val{font-weight:700;color:var(--white)}
 
-/* Layout */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:10;position:sticky;top:0}
-.topbar h1{font-size:16px;font-weight:700;color:var(--white)}
-.topbar .dt{font-size:11px;color:var(--muted)}
-.content{padding:20px 24px;overflow-y:auto;flex:1}
-.content-peta{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+/* ── Map sidebar (tengah) ── */
+.ms-head{
+  padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;
+  background:var(--card);
+}
+.ms-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--white);margin-bottom:8px}
+.ms-filter{display:flex;flex-direction:column;gap:6px}
+.ms-sel{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);padding:6px 9px;
+  font-family:'DM Sans',sans-serif;font-size:11px;outline:none;cursor:pointer;
+}
+.ms-search{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);padding:6px 9px;
+  font-family:'DM Sans',sans-serif;font-size:11px;outline:none;
+}
+.ms-search::placeholder{color:var(--muted)}
+.ms-list{flex:1;overflow-y:auto}
+.ms-group-head{
+  padding:7px 12px 3px;font-size:8px;font-weight:700;
+  letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--muted);display:flex;align-items:center;gap:5px;
+  position:sticky;top:0;background:var(--surface);z-index:1;
+}
+.ms-item{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 12px;cursor:pointer;
+  transition:background .12s;border-left:2px solid transparent;
+}
+.ms-item:hover{background:rgba(255,255,255,.04)}
+.ms-item.sel{background:rgba(30,144,255,.08);border-left-color:var(--pln)}
+.ms-item.sel-ultg{background:rgba(245,158,11,.08);border-left-color:var(--ultg)}
+.ms-dot{width:8px;height:8px;flex-shrink:0}
+.ms-name{flex:1;font-size:10px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-sub{font-size:8px;color:var(--muted)}
+.ms-vol{font-size:9px;font-weight:700;white-space:nowrap}
+.ms-stats-bar{
+  flex-shrink:0;padding:8px 12px;border-top:1px solid var(--border);
+  background:var(--card);display:flex;gap:6px;flex-wrap:wrap;
+}
+.ms-chip{display:inline-flex;align-items:center;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:600;color:var(--text)}
 
-/* Cards */
-.card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:16px 18px;margin-bottom:14px}
+/* ── Main topbar ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:11px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar h1{font-size:15px;font-weight:700;color:var(--white)}
+.topbar .dt{font-size:10px;color:var(--muted)}
+
+/* ── Content area ── */
+.content{padding:18px 20px;overflow-y:auto;flex:1}
+.content-map{flex:1;position:relative;min-height:0;overflow:hidden}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px}
 .card-ai{background:linear-gradient(135deg,#1a1635 0%,#1a2d1e 100%);border-color:rgba(124,106,247,.3)}
-.card-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-pln{background:linear-gradient(135deg,#0a1a2e 0%,#1a2d1e 100%);border-color:rgba(30,144,255,.25)}
+.card-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--white);margin-bottom:10px;display:flex;align-items:center;gap:7px}
 
-/* Grid */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:16px}
+/* ── Grid ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
 
-/* Form */
-.fld{margin-bottom:10px}
-label{display:block;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
-input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+/* ── Form ── */
+.fld{margin-bottom:9px}
+label{display:block;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:6px 9px;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;transition:border-color .2s}
 input:focus,select:focus,textarea:focus{border-color:var(--g1)}
 textarea{resize:vertical}
 
-/* Jenis card */
-.jk{border-radius:10px;border:1.5px solid var(--border);overflow:hidden;transition:border-color .2s}
-.jk-head{padding:8px 12px 7px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-.jk-icon-lbl{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--jc,var(--g1))}
-.jk-body{padding:8px 12px 10px;background:var(--bg)}
-.jk-vol-row{display:flex;align-items:baseline;gap:3px;margin-bottom:7px}
-.jk-vol{flex:1;background:transparent;border:none;color:var(--white);font-family:'Syne',sans-serif;font-size:18px;font-weight:700;outline:none;padding:0;width:100%}
-.jk-vol::placeholder{color:rgba(255,255,255,.15);font-size:14px}
-.jk-kg{font-size:11px;color:var(--muted);flex-shrink:0}
-.jk-sel{width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:5px 8px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;outline:none;cursor:pointer}
+/* ── Jenis card ── */
+.jk{border-radius:9px;border:1.5px solid var(--border);overflow:hidden;transition:border-color .2s}
+.jk-head{padding:7px 10px 6px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.jk-lbl{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:var(--jc,var(--g1))}
+.jk-body{padding:7px 10px 9px;background:var(--bg)}
+.jk-vrow{display:flex;align-items:baseline;gap:3px;margin-bottom:6px}
+.jk-vol{flex:1;background:transparent;border:none;color:var(--white);font-family:'Syne',sans-serif;font-size:17px;font-weight:700;outline:none;padding:0;width:100%}
+.jk-vol::placeholder{color:rgba(255,255,255,.12);font-size:13px}
+.jk-kg{font-size:10px;color:var(--muted);flex-shrink:0}
+.jk-sel{width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 7px;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;outline:none;cursor:pointer}
 
-/* Pills */
-.pill{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+/* ── Pills ── */
+.pill{display:inline-block;padding:1px 7px;border-radius:20px;font-size:10px;font-weight:600}
 .p-ko{background:rgba(93,189,106,.15);color:var(--g1)}
 .p-bs{background:rgba(90,168,214,.15);color:#5aa8d6}
 .p-tp{background:rgba(224,112,80,.15);color:var(--g3)}
 
-/* Stat tile */
-.st{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:11px 13px;position:relative;overflow:hidden}
+/* ── Stat tile ── */
+.st{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;position:relative;overflow:hidden}
 .st::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--stc,var(--g1))}
-.st-lbl{font-size:9px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
-.st-val{font-size:19px;font-family:'Syne',sans-serif;font-weight:700;color:var(--white)}
-.st-unit{font-size:10px;color:var(--muted);margin-left:2px}
+.st-lbl{font-size:8px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
+.st-val{font-size:17px;font-family:'Syne',sans-serif;font-weight:700;color:var(--white)}
+.st-unit{font-size:9px;color:var(--muted);margin-left:2px}
 
-/* Progress */
-.pr{margin-bottom:9px}
-.pr-h{display:flex;justify-content:space-between;margin-bottom:3px;font-size:11px}
+/* ── Progress ── */
+.pr{margin-bottom:8px}
+.pr-h{display:flex;justify-content:space-between;margin-bottom:2px;font-size:10px}
 .pr-b{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
 .pr-f{height:100%;border-radius:2px;transition:width .5s}
 
-/* Table */
+/* ── Table ── */
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:11px}
-th{text-align:left;padding:6px 9px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
-td{padding:6px 9px;border-bottom:1px solid rgba(38,58,40,.5);vertical-align:middle}
+th{text-align:left;padding:6px 8px;font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid rgba(38,58,40,.5);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(93,189,106,.03)}
 .tf td{background:rgba(93,189,106,.05);font-weight:700;font-size:10px}
 
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
 .btn-p{background:var(--g1);color:#0a1a0b}.btn-p:hover{background:#70d47e;transform:translateY(-1px)}
 .btn-s{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-s:hover{border-color:var(--g1);color:var(--g1)}
-.btn-d{background:var(--g3);color:#fff;padding:3px 9px;font-size:10px}.btn-d:hover{background:#ea8060}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.btn-d{background:var(--g3);color:#fff;padding:3px 8px;font-size:10px}.btn-d:hover{background:#ea8060}
+.btn-pln{background:var(--pln);color:#fff}.btn-pln:hover{background:#3aa0ff;transform:translateY(-1px)}
+.btn-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
 
-/* Infobox */
-.ib{font-size:11px;color:var(--muted);border-radius:7px;padding:7px 11px;margin-top:8px;line-height:1.8}
+/* ── Infobox ── */
+.ib{font-size:10px;color:var(--muted);border-radius:7px;padding:7px 10px;margin-top:8px;line-height:1.8}
 .ib-g{background:rgba(93,189,106,.06);border:1px solid rgba(93,189,106,.15)}
 .ib-a{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.15)}
 .ib-r{background:rgba(224,112,80,.08);border:1px solid rgba(224,112,80,.2);color:var(--g3)}
 .ib-ai{background:rgba(124,106,247,.08);border:1px solid rgba(124,106,247,.25);color:#b8aff9}
+.ib-pln{background:rgba(30,144,255,.07);border:1px solid rgba(30,144,255,.2);color:#7ec8ff}
 
-/* Preview */
-.pv-box{background:rgba(93,189,106,.07);border:1px solid rgba(93,189,106,.2);border-radius:9px;padding:10px 12px;margin-bottom:12px}
-.pv-title{font-size:9px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
-.pv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:8px}
-.pv-item .pv-lbl{font-size:9px;color:var(--muted)}
-.pv-item .pv-val{font-size:13px;font-family:'Syne',sans-serif;font-weight:700}
-.pv-total{border-top:1px solid rgba(93,189,106,.2);padding-top:7px;display:flex;gap:14px;font-size:12px;flex-wrap:wrap}
-.sec-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
-.sec-strip{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;margin-bottom:12px;font-size:12px;font-weight:700}
+/* ── Preview ── */
+.pv-box{background:rgba(93,189,106,.07);border:1px solid rgba(93,189,106,.2);border-radius:8px;padding:10px 12px;margin-bottom:11px}
+.pv-title{font-size:8px;color:var(--muted);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.pv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:7px}
+.pv-lbl{font-size:8px;color:var(--muted)}
+.pv-val{font-size:12px;font-family:'Syne',sans-serif;font-weight:700}
+.pv-total{border-top:1px solid rgba(93,189,106,.2);padding-top:7px;display:flex;gap:12px;font-size:11px;flex-wrap:wrap}
+
+/* ── Misc ── */
+.sec-lbl{font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.sec-strip{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;margin-bottom:11px;font-size:11px;font-weight:700}
 .ss-org{background:rgba(93,189,106,.08);border:1px solid rgba(93,189,106,.2);color:var(--g1)}
 .ss-anorg{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--g2)}
-.empty{text-align:center;padding:36px;color:var(--muted)}
-.empty-ic{font-size:32px;margin-bottom:8px}
-.toast{position:fixed;bottom:20px;right:20px;background:var(--g1);color:#0a1a0b;padding:9px 16px;border-radius:9px;font-weight:600;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:9999;animation:su .3s ease}
-@keyframes su{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.ai-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700;color:#c4bbff}
-.ai-dot{width:5px;height:5px;border-radius:50%;background:var(--ai);animation:pulse 1.5s infinite}
+.empty{text-align:center;padding:32px;color:var(--muted)}
+.empty-ic{font-size:28px;margin-bottom:8px}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--g1);color:#0a1a0b;padding:8px 14px;border-radius:8px;font-weight:600;font-size:11px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:9999;animation:su .3s ease}
+@keyframes su{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.skor-ring{position:relative;width:72px;height:72px;flex-shrink:0}
-.skor-svg{width:72px;height:72px;transform:rotate(-90deg)}
-.skor-bg{fill:none;stroke:var(--border);stroke-width:7}
-.skor-fg{fill:none;stroke-width:7;stroke-linecap:round;transition:stroke-dashoffset .8s}
-.skor-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:16px;font-weight:800}
-.tren-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.ai-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(124,106,247,.15);border:1px solid rgba(124,106,247,.3);border-radius:20px;padding:2px 8px;font-size:9px;font-weight:700;color:#c4bbff}
+.ai-dot{width:5px;height:5px;border-radius:50%;background:var(--ai);animation:pulse 1.5s infinite}
+.skor-ring{position:relative;width:66px;height:66px;flex-shrink:0}
+.skor-svg{width:66px;height:66px;transform:rotate(-90deg)}
+.skor-bg{fill:none;stroke:var(--border);stroke-width:6}
+.skor-fg{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .8s}
+.skor-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:15px;font-weight:800}
+.tren-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:700}
 .tren-up{background:rgba(224,112,80,.15);color:var(--g3)}
 .tren-dn{background:rgba(93,189,106,.15);color:var(--g1)}
 .tren-flat{background:rgba(201,168,76,.15);color:var(--g2)}
-.reko-item{display:flex;gap:10px;padding:10px 12px;border-radius:9px;margin-bottom:9px;border:1px solid transparent}
-.reko-icon{font-size:18px;flex-shrink:0;margin-top:1px}
-.reko-title{font-size:12px;font-weight:700;margin-bottom:2px}
-.reko-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.reko-item{display:flex;gap:9px;padding:9px 11px;border-radius:8px;margin-bottom:8px;border:1px solid transparent}
+.reko-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.reko-title{font-size:11px;font-weight:700;margin-bottom:2px}
+.reko-desc{font-size:10px;color:var(--muted);line-height:1.5}
 .reko-high{background:rgba(224,112,80,.08);border-color:rgba(224,112,80,.25)}.reko-high .reko-title{color:var(--g3)}
 .reko-med{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.25)}.reko-med .reko-title{color:var(--g2)}
 .reko-low{background:rgba(93,189,106,.08);border-color:rgba(93,189,106,.25)}.reko-low .reko-title{color:var(--g1)}
 .reko-info{background:rgba(124,106,247,.08);border-color:rgba(124,106,247,.25)}.reko-info .reko-title{color:#b8aff9}
-.pred-card{background:rgba(124,106,247,.08);border:1px solid rgba(124,106,247,.25);border-radius:10px;padding:13px 15px;margin-bottom:12px}
-.pred-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.pred-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:#c4bbff}
-.pred-sub{font-size:10px;color:var(--muted)}
-.pred-val{font-size:24px;font-family:'Syne',sans-serif;font-weight:800;color:var(--white)}
-.pred-note{font-size:10px;color:#9b8ff0;margin-top:4px;line-height:1.5}
-.sl{display:flex;gap:10px;margin-bottom:10px}
-.sl-nm{font-weight:600;color:var(--white);font-size:12px}
-.sl-ds{font-size:10px;color:var(--muted)}
+.pred-card{background:rgba(124,106,247,.08);border:1px solid rgba(124,106,247,.25);border-radius:9px;padding:12px 14px;margin-bottom:10px}
+.pred-header{display:flex;align-items:center;gap:7px;margin-bottom:8px}
+.pred-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#c4bbff}
+.pred-sub{font-size:9px;color:var(--muted)}
+.pred-val{font-size:22px;font-family:'Syne',sans-serif;font-weight:800;color:var(--white)}
+.pred-note{font-size:9px;color:#9b8ff0;margin-top:3px;line-height:1.5}
 
-/* ══ PETA ══ */
-.map-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
-#map-container{flex:1;position:relative;min-height:0}
+/* ── Peta / Leaflet ── */
 #leaflet-map{width:100%;height:100%}
-
-.leaflet-popup-content-wrapper{background:var(--card)!important;border:1px solid var(--border)!important;border-radius:11px!important;box-shadow:0 8px 28px rgba(0,0,0,.55)!important;color:var(--text)!important;padding:0!important}
-.leaflet-popup-content{margin:0!important;width:auto!important;max-width:280px}
+.leaflet-popup-content-wrapper{background:var(--card)!important;border:1px solid var(--border)!important;border-radius:10px!important;box-shadow:0 8px 28px rgba(0,0,0,.55)!important;color:var(--text)!important;padding:0!important}
+.leaflet-popup-content{margin:0!important;width:auto!important}
 .leaflet-popup-tip{background:var(--card)!important}
-.leaflet-popup-close-button{color:var(--muted)!important;font-size:16px!important;top:7px!important;right:9px!important}
+.leaflet-popup-close-button{color:var(--muted)!important;font-size:14px!important;top:6px!important;right:8px!important}
 .leaflet-control-zoom a{background:var(--card)!important;color:var(--text)!important;border-color:var(--border)!important}
-.leaflet-control-zoom a:hover{background:var(--surface)!important}
-.leaflet-control-attribution{background:rgba(13,27,18,.85)!important;color:var(--muted)!important;font-size:9px!important}
+.leaflet-control-attribution{background:rgba(13,27,18,.85)!important;color:var(--muted)!important;font-size:8px!important}
+.pop-wrap{padding:12px 14px;min-width:200px}
+.pop-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--white);margin-bottom:2px}
+.pop-sub{font-size:10px;color:var(--muted);margin-bottom:8px}
+.pop-row{display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px}
+.pop-lbl{color:var(--muted)}
+.pop-val{font-weight:600;color:var(--white)}
+.pop-btn{width:100%;margin-top:9px;padding:6px;background:var(--g1);color:#0a1a0b;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:background .2s}
+.pop-btn:hover{background:#70d47e}
 
-.map-filter-sel{background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:11px;outline:none;cursor:pointer}
-.map-search{background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:11px;outline:none;flex:1;min-width:120px;max-width:200px}
-.map-search::placeholder{color:var(--muted)}
-.map-chip{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:600;color:var(--text);white-space:nowrap}
+/* ── Map legend ── */
+.map-legend{position:absolute;bottom:24px;right:8px;z-index:400;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 11px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.leg-i{display:flex;align-items:center;gap:6px;font-size:9px;color:var(--text);margin-bottom:3px}
+.leg-i:last-child{margin:0}
 
-/* Left panel lokasi */
-.loc-panel{position:absolute;top:0;left:0;bottom:0;width:240px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;z-index:400;display:flex;flex-direction:column}
-.loc-panel-head{padding:10px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;flex-shrink:0}
-.loc-item{display:flex;align-items:center;gap:8px;padding:7px 11px;cursor:pointer;transition:background .15s;margin:2px 6px;border-radius:8px;border:1px solid transparent}
-.loc-item:hover{background:rgba(93,189,106,.06)}
-.loc-item.sel{background:rgba(30,144,255,.08);border-color:rgba(30,144,255,.2)}
-.loc-item.ultg-item:hover{background:rgba(245,158,11,.06)}
-.loc-item.ultg-item.sel{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.2)}
-.loc-item.kantor-item:hover{background:rgba(16,185,129,.06)}
-.loc-item.kantor-item.sel{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.2)}
-.loc-dot{width:9px;height:9px;flex-shrink:0}
-.loc-name{flex:1;font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.loc-sub{font-size:9px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.loc-vol{font-size:10px;font-weight:700;white-space:nowrap}
-.loc-group-head{padding:8px 12px 4px;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;display:flex;align-items:center;gap:6px;margin-top:4px}
+/* ── Modal ── */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:10000;animation:su .2s}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:20px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:9px}
+.modal-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--white)}
+.modal-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0;flex-shrink:0}
 
-/* Right detail panel */
-.detail-panel{position:absolute;top:0;right:0;bottom:0;width:300px;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;z-index:400;transform:translateX(100%);transition:transform .3s}
-.detail-panel.open{transform:translateX(0)}
-.dp-head{background:var(--card);padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-shrink:0;position:sticky;top:0;z-index:1}
-.dp-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0;line-height:1;flex-shrink:0}
-.dp-body{padding:14px}
+/* ── Lokasi badge ── */
+.lok-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.3px}
 
-/* Legend */
-.map-legend{position:absolute;bottom:28px;right:8px;z-index:400;background:var(--card);border:1px solid var(--border);border-radius:9px;padding:9px 12px;box-shadow:0 4px 14px rgba(0,0,0,.3);min-width:150px}
-.leg-item{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--text);margin-bottom:4px}
-.leg-item:last-child{margin-bottom:0}
-
-/* Modal */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:10000;animation:su .2s}
-.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
-.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:10px}
-.modal-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--white)}
-.modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0;flex-shrink:0}
-
-/* Dropdown UPT pilihan */
-.upt-select-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
-.upt-sel{background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--white);padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;outline:none;cursor:pointer;min-width:220px}
-
-@media(max-width:800px){
-  .sidebar{display:none}
+@media(max-width:900px){
+  .map-sidebar{display:none}
   .g2,.g3{grid-template-columns:1fr}
   .g4,.g5{grid-template-columns:1fr 1fr}
-  .loc-panel{display:none}
-  .detail-panel{width:100%;top:auto;height:55%}
-  .content{padding:12px}
 }
 </style>
 </head>
@@ -241,55 +273,50 @@ tr:hover td{background:rgba(93,189,106,.03)}
 <script type="text/babel">
 const { useState, useEffect, useRef, useMemo } = React;
 
-// ── Data lokasi NYATA UPT PLN Palembang ──────────────────────
-// Koordinat berdasarkan lokasi nyata di Google Maps
+// ── DATA LOKASI UPT PLN PALEMBANG ─────────────────────────────
 const DATA_LOKASI = [
-  // ── KANTOR UPT ──
-  { id:'upt-plm',   tipe:'KANTOR', nama:'Kantor UPT Palembang',    ultg:'UPT',              kota:'Palembang', lat:-2.9476, lng:104.7673, warna:'#10b981' },
-
-  // ── ULTG KERAMASAN ──
-  { id:'ultg-krm',  tipe:'ULTG',   nama:'Kantor ULTG Keramasan',   ultg:'ULTG Keramasan',   kota:'Palembang', lat:-2.9918, lng:104.7321, warna:'#f59e0b' },
-  { id:'gi-krm',    tipe:'GI',     nama:'GI Keramasan',            ultg:'ULTG Keramasan',   kota:'Palembang', lat:-2.9982, lng:104.7284, warna:'#1e90ff' },
-  { id:'gi-bng',    tipe:'GI',     nama:'GI Bungaran',             ultg:'ULTG Keramasan',   kota:'Palembang', lat:-2.9543, lng:104.8012, warna:'#1e90ff' },
-  { id:'gi-mrn',    tipe:'GI',     nama:'GI Mariana',              ultg:'ULTG Keramasan',   kota:'Banyuasin', lat:-2.9213, lng:104.8543, warna:'#1e90ff' },
-  { id:'gi-skd',    tipe:'GI',     nama:'GI Sungai Kedukan',       ultg:'ULTG Keramasan',   kota:'Banyuasin', lat:-3.0123, lng:104.8321, warna:'#1e90ff' },
-  { id:'gi-njb',    tipe:'GI',     nama:'GI New Jakabaring',       ultg:'ULTG Keramasan',   kota:'Palembang', lat:-3.0312, lng:104.7842, warna:'#1e90ff' },
-  { id:'gi-kya',    tipe:'GI',     nama:'GI Kayu Agung',           ultg:'ULTG Keramasan',   kota:'OKI',       lat:-3.3891, lng:104.9234, warna:'#1e90ff' },
-
-  // ── ULTG BORANG ──
-  { id:'ultg-brg',  tipe:'ULTG',   nama:'Kantor ULTG Borang',      ultg:'ULTG Borang',      kota:'Palembang', lat:-2.9021, lng:104.6843, warna:'#f59e0b' },
-  { id:'gis-ktb',   tipe:'GIS',    nama:'GIS Kota Barat',          ultg:'ULTG Borang',      kota:'Palembang', lat:-2.9312, lng:104.7021, warna:'#8b5cf6' },
-  { id:'gi-tlk',    tipe:'GI',     nama:'GI Talang Kelapa',        ultg:'ULTG Borang',      kota:'Banyuasin', lat:-2.8743, lng:104.6512, warna:'#1e90ff' },
-  { id:'gi-gds',    tipe:'GI',     nama:'GI Gandus',               ultg:'ULTG Borang',      kota:'Palembang', lat:-2.9543, lng:104.6923, warna:'#1e90ff' },
-  { id:'gi-brg',    tipe:'GI',     nama:'GI Borang',               ultg:'ULTG Borang',      kota:'Banyuasin', lat:-2.8912, lng:104.6723, warna:'#1e90ff' },
-  { id:'gi-tja',    tipe:'GI',     nama:'GI Tanjung Api-Api',      ultg:'ULTG Borang',      kota:'Banyuasin', lat:-2.8123, lng:104.5234, warna:'#1e90ff' },
-  { id:'gi-ktn',    tipe:'GI',     nama:'GI Kenten',               ultg:'ULTG Borang',      kota:'Palembang', lat:-2.9123, lng:104.7423, warna:'#1e90ff' },
-
-  // ── ULTG BETUNG ──
-  { id:'ultg-btg',  tipe:'ULTG',   nama:'Kantor ULTG Betung',      ultg:'ULTG Betung',      kota:'Banyuasin', lat:-2.6432, lng:104.8123, warna:'#f59e0b' },
-  { id:'gitet-btg', tipe:'GITET',  nama:'GITET Betung',            ultg:'ULTG Betung',      kota:'Banyuasin', lat:-2.6512, lng:104.8234, warna:'#ec4899' },
-  { id:'gi-sky',    tipe:'GI',     nama:'GI Sekayu',               ultg:'ULTG Betung',      kota:'Musi Banyuasin', lat:-2.9234, lng:103.9821, warna:'#1e90ff' },
-  { id:'gitet-sgl', tipe:'GITET',  nama:'GITET Sungai Lilin',      ultg:'ULTG Betung',      kota:'Musi Banyuasin', lat:-2.7234, lng:104.0543, warna:'#ec4899' },
-
-  // ── ULTG BOOMBARU ──
-  { id:'ultg-bmb',  tipe:'ULTG',   nama:'Kantor ULTG Boombaru',    ultg:'ULTG Boombaru',    kota:'Palembang', lat:-2.9376, lng:104.7823, warna:'#f59e0b' },
-  { id:'gi-sjr',    tipe:'GI',     nama:'GI Sungai Juaro',         ultg:'ULTG Boombaru',    kota:'Palembang', lat:-2.9234, lng:104.7734, warna:'#1e90ff' },
-  { id:'gi-sdp',    tipe:'GI',     nama:'GI Seduduk Putih',        ultg:'ULTG Boombaru',    kota:'Palembang', lat:-2.9412, lng:104.7512, warna:'#1e90ff' },
-  { id:'gi-bmb',    tipe:'GI',     nama:'GI Boombaru',             ultg:'ULTG Boombaru',    kota:'Palembang', lat:-2.9476, lng:104.7843, warna:'#1e90ff' },
-  { id:'gi-tlr',    tipe:'GI',     nama:'GI Talang Ratu',          ultg:'ULTG Boombaru',    kota:'Palembang', lat:-2.9712, lng:104.7234, warna:'#1e90ff' },
-  { id:'gi-bsg',    tipe:'GI',     nama:'GI Bukit Siguntang',      ultg:'ULTG Boombaru',    kota:'Palembang', lat:-2.9823, lng:104.7123, warna:'#1e90ff' },
-  { id:'gis-ktt',   tipe:'GIS',    nama:'GIS Kota Timur',          ultg:'ULTG Boombaru',    kota:'Palembang', lat:-2.9312, lng:104.7934, warna:'#8b5cf6' },
+  // Kantor UPT
+  {id:'upt',        tipe:'KANTOR', nama:'Kantor UPT Palembang',      ultg:'UPT',           kota:'Palembang', lat:-2.9476, lng:104.7673},
+  // ULTG Keramasan
+  {id:'ultg-krm',   tipe:'ULTG',   nama:'Kantor ULTG Keramasan',     ultg:'ULTG Keramasan',kota:'Palembang', lat:-2.9918, lng:104.7321},
+  {id:'gi-krm',     tipe:'GI',     nama:'GI Keramasan',              ultg:'ULTG Keramasan',kota:'Palembang', lat:-2.9982, lng:104.7284},
+  {id:'gi-bng',     tipe:'GI',     nama:'GI Bungaran',               ultg:'ULTG Keramasan',kota:'Palembang', lat:-2.9543, lng:104.8012},
+  {id:'gi-mrn',     tipe:'GI',     nama:'GI Mariana',                ultg:'ULTG Keramasan',kota:'Banyuasin', lat:-2.9213, lng:104.8543},
+  {id:'gi-skd',     tipe:'GI',     nama:'GI Sungai Kedukan',         ultg:'ULTG Keramasan',kota:'Banyuasin', lat:-3.0123, lng:104.8321},
+  {id:'gi-njb',     tipe:'GI',     nama:'GI New Jakabaring',         ultg:'ULTG Keramasan',kota:'Palembang', lat:-3.0312, lng:104.7842},
+  {id:'gi-kya',     tipe:'GI',     nama:'GI Kayu Agung',             ultg:'ULTG Keramasan',kota:'OKI',       lat:-3.3891, lng:104.9234},
+  // ULTG Borang
+  {id:'ultg-brg',   tipe:'ULTG',   nama:'Kantor ULTG Borang',        ultg:'ULTG Borang',   kota:'Palembang', lat:-2.9021, lng:104.6843},
+  {id:'gis-ktb',    tipe:'GIS',    nama:'GIS Kota Barat',            ultg:'ULTG Borang',   kota:'Palembang', lat:-2.9312, lng:104.7021},
+  {id:'gi-tlk',     tipe:'GI',     nama:'GI Talang Kelapa',          ultg:'ULTG Borang',   kota:'Banyuasin', lat:-2.8743, lng:104.6512},
+  {id:'gi-gds',     tipe:'GI',     nama:'GI Gandus',                 ultg:'ULTG Borang',   kota:'Palembang', lat:-2.9543, lng:104.6923},
+  {id:'gi-brg',     tipe:'GI',     nama:'GI Borang',                 ultg:'ULTG Borang',   kota:'Banyuasin', lat:-2.8912, lng:104.6723},
+  {id:'gi-tja',     tipe:'GI',     nama:'GI Tanjung Api-Api',        ultg:'ULTG Borang',   kota:'Banyuasin', lat:-2.8123, lng:104.5234},
+  {id:'gi-ktn',     tipe:'GI',     nama:'GI Kenten',                 ultg:'ULTG Borang',   kota:'Palembang', lat:-2.9123, lng:104.7423},
+  // ULTG Betung
+  {id:'ultg-btg',   tipe:'ULTG',   nama:'Kantor ULTG Betung',        ultg:'ULTG Betung',   kota:'Banyuasin', lat:-2.6432, lng:104.8123},
+  {id:'gitet-btg',  tipe:'GITET',  nama:'GITET Betung',              ultg:'ULTG Betung',   kota:'Banyuasin', lat:-2.6512, lng:104.8234},
+  {id:'gi-sky',     tipe:'GI',     nama:'GI Sekayu',                 ultg:'ULTG Betung',   kota:'Musi Banyuasin',lat:-2.9234,lng:103.9821},
+  {id:'gitet-sgl',  tipe:'GITET',  nama:'GITET Sungai Lilin',        ultg:'ULTG Betung',   kota:'Musi Banyuasin',lat:-2.7234,lng:104.0543},
+  // ULTG Boombaru
+  {id:'ultg-bmb',   tipe:'ULTG',   nama:'Kantor ULTG Boombaru',      ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9376, lng:104.7823},
+  {id:'gi-sjr',     tipe:'GI',     nama:'GI Sungai Juaro',           ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9234, lng:104.7734},
+  {id:'gi-sdp',     tipe:'GI',     nama:'GI Seduduk Putih',          ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9412, lng:104.7512},
+  {id:'gi-bmb',     tipe:'GI',     nama:'GI Boombaru',               ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9476, lng:104.7843},
+  {id:'gi-tlr',     tipe:'GI',     nama:'GI Talang Ratu',            ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9712, lng:104.7234},
+  {id:'gi-bsg',     tipe:'GI',     nama:'GI Bukit Siguntang',        ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9823, lng:104.7123},
+  {id:'gis-ktt',    tipe:'GIS',    nama:'GIS Kota Timur',            ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9312, lng:104.7934},
 ];
 
-const ULTG_LIST = ['Semua','ULTG Keramasan','ULTG Borang','ULTG Betung','ULTG Boombaru'];
-const TIPE_ORDER = { KANTOR:0, ULTG:1, GI:2, GIS:2, GITET:2 };
+const ULTG_LIST   =['Semua','ULTG Keramasan','ULTG Borang','ULTG Betung','ULTG Boombaru'];
+const ULTG_WARNA  ={'ULTG Keramasan':'#1e90ff','ULTG Borang':'#10b981','ULTG Betung':'#f59e0b','ULTG Boombaru':'#e07050','UPT':'#a78bfa'};
 
-// ── Jenis & Constants ────────────────────────────────────────
+// ── Jenis & Constants ─────────────────────────────────────────
 const JENIS=[
   {key:'daun',   label:'Daun',                   icon:'🍃',color:'var(--c-daun)',  grup:'organik'  },
   {key:'makan',  label:'Sisa Makanan',            icon:'🍱',color:'var(--c-makan)', grup:'organik'  },
   {key:'kertas', label:'Kertas / Kardus',         icon:'📦',color:'var(--c-kertas)',grup:'anorganik'},
-  {key:'plastik',label:'Plastik (Botol/Kantong)', icon:'🧴',color:'var(--c-plastik)',grup:'anorganik'},
+  {key:'plastik',label:'Plastik',                 icon:'🧴',color:'var(--c-plastik)',grup:'anorganik'},
   {key:'lain',   label:'Lain-lain (Kaca/Besi)',   icon:'🔩',color:'var(--c-lain)',  grup:'anorganik'},
 ];
 const JENIS_ORG  =JENIS.filter(j=>j.grup==='organik');
@@ -307,44 +334,54 @@ const penKey=k=>`pen_${k}`;
 const sumGrup=(r,g)=>JENIS.filter(j=>j.grup===g).reduce((s,j)=>s+vNum(r[j.key]),0);
 const sumAll =r=>JENIS.reduce((s,j)=>s+vNum(r[j.key]),0);
 
-// Seed dummy data
+function warnaTipe(tipe){
+  if(tipe==='KANTOR')return'#10b981';
+  if(tipe==='ULTG')return'#f59e0b';
+  if(tipe==='GIS')return'#8b5cf6';
+  if(tipe==='GITET')return'#ec4899';
+  return'#1e90ff';
+}
+function iconTipe(t){
+  if(t==='KANTOR')return'🏛';if(t==='ULTG')return'🏢';
+  if(t==='GIS')return'⚡';if(t==='GITET')return'🔋';return'⚡';
+}
+
+// Dummy data
 function genDummy(seed){
-  const data=[];
+  const d=[];
   for(let m=2;m>=0;m--){
-    const d=new Date(TODAY.getFullYear(),TODAY.getMonth()-m,1);
-    const base=(seed%8+2)*1.5;
-    data.push({bulan:d.getMonth(),tahun:d.getFullYear(),
-      daun:   +(base*(0.7+Math.random()*.5)).toFixed(1),
-      makan:  +(base*(0.5+Math.random()*.4)).toFixed(1),
-      kertas: +(base*(0.3+Math.random()*.3)).toFixed(1),
-      plastik:+(base*(0.4+Math.random()*.3)).toFixed(1),
-      lain:   +(base*(0.15+Math.random()*.2)).toFixed(1),
+    const dt=new Date(TODAY.getFullYear(),TODAY.getMonth()-m,1);
+    const b=(seed%7+2)*1.8;
+    d.push({bulan:dt.getMonth(),tahun:dt.getFullYear(),
+      daun:+(b*(0.8+Math.random()*.5)).toFixed(1),
+      makan:+(b*(0.5+Math.random()*.4)).toFixed(1),
+      kertas:+(b*(0.3+Math.random()*.3)).toFixed(1),
+      plastik:+(b*(0.4+Math.random()*.3)).toFixed(1),
+      lain:+(b*(0.15+Math.random()*.2)).toFixed(1),
       pen_daun:'Komposting',pen_makan:'TPA',
       pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',
     });
   }
-  return data;
+  return d;
 }
-
 const SAMPAH_AWAL={};
 DATA_LOKASI.forEach((l,i)=>{ SAMPAH_AWAL[l.id]=genDummy(i*5+7); });
 
 function totBulanIni(d){
-  if(!d||d.length===0)return{total:0,org:0,anorg:0};
+  if(!d||!d.length)return{total:0,org:0,anorg:0};
   const last=d[d.length-1];
   const org=sumGrup(last,'organik'),anorg=sumGrup(last,'anorganik');
-  return{total:org+anorg,org,anorg,data:last};
+  return{total:org+anorg,org,anorg,last};
 }
 
-// ── AI Engine ────────────────────────────────────────────────
+// ── AI Engine ──────────────────────────────────────────────────
 function runAI(records){
   const byM={};
   records.forEach(r=>{
     const d=new Date(r.tanggal);
     const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
     if(!byM[k])byM[k]={org:0,anorg:0,total:0,byJenis:{},byPen:{Komposting:0,'Bank Sampah':0,TPA:0}};
-    const m=byM[k];
-    m.org+=sumGrup(r,'organik');m.anorg+=sumGrup(r,'anorganik');m.total+=sumAll(r);
+    const m=byM[k];m.org+=sumGrup(r,'organik');m.anorg+=sumGrup(r,'anorganik');m.total+=sumAll(r);
     JENIS.forEach(j=>{m.byJenis[j.key]=(m.byJenis[j.key]||0)+vNum(r[j.key]);const p=r[penKey(j.key)]||'Komposting';m.byPen[p]=(m.byPen[p]||0)+vNum(r[j.key]);});
   });
   const keys=Object.keys(byM).sort(),months=keys.map(k=>byM[k]),n=months.length;
@@ -355,127 +392,248 @@ function runAI(records){
   const pA=months.reduce((s,m,i)=>s+m.anorg*w[i],0)/wS;
   const li=n-1;
   let tren='flat',trenPct=0;
-  if(n>=2){const p=months[li-1].total||1;const c=months[li].total;trenPct=((c-p)/p)*100;tren=trenPct>5?'up':trenPct<-5?'down':'flat';}
+  if(n>=2){const prev=months[li-1].total||1;trenPct=((months[li].total-prev)/prev)*100;tren=trenPct>5?'up':trenPct<-5?'down':'flat';}
   const t2=months[li].total||1;
   const tpa=(months[li].byPen.TPA||0)/t2,komp=(months[li].byPen.Komposting||0)/t2,bank=(months[li].byPen['Bank Sampah']||0)/t2;
   const skor=Math.min(100,Math.max(0,Math.round(komp*100+bank*80+(1-tpa)*20)));
   const reko=[];
   if(tpa>0.5)reko.push({level:'high',icon:'🚨',title:`TPA sangat tinggi (${(tpa*100).toFixed(0)}%)`,desc:'Tingkatkan Komposting & Bank Sampah. Target TPA < 30%.'});
   else if(tpa>0.3)reko.push({level:'med',icon:'⚠️',title:`TPA perlu dikurangi (${(tpa*100).toFixed(0)}%)`,desc:'Dorong pemilahan lebih konsisten.'});
-  if(tren==='up'&&Math.abs(trenPct)>10)reko.push({level:'med',icon:'📈',title:`Timbulan naik ${trenPct.toFixed(1)}%`,desc:'Siapkan kapasitas pengelolaan tambahan.'});
-  if(skor>=75)reko.push({level:'low',icon:'🏆',title:`Pengelolaan baik! Skor ${skor}/100`,desc:'Pertahankan konsistensi.'});
-  if(!reko.length)reko.push({level:'info',icon:'💡',title:'Tambah data untuk analisis lebih akurat',desc:'Input minimal 2 bulan untuk prediksi lebih presisi.'});
+  if(tren==='up'&&Math.abs(trenPct)>10)reko.push({level:'med',icon:'📈',title:`Timbulan naik ${trenPct.toFixed(1)}%`,desc:'Siapkan kapasitas tambahan.'});
+  if(skor>=75)reko.push({level:'low',icon:'🏆',title:`Skor kinerja baik: ${skor}/100`,desc:'Pertahankan konsistensi pemilahan.'});
+  if(!reko.length)reko.push({level:'info',icon:'💡',title:'Tambah data untuk analisis akurat',desc:'Input minimal 2 bulan untuk prediksi presisi.'});
   const nd=new Date(keys[li]+'-01');nd.setMonth(nd.getMonth()+1);
-  return{keys,months,n,pT,pO,pA,tren,trenPct,skor,tpa,komp,bank,lastM:months[li],predLabel:BULAN_SHORT[nd.getMonth()]+' '+nd.getFullYear()};
+  return{keys,months,n,pT,pO,pA,tren,trenPct,skor,tpa,komp,bank,lastM:months[li],predLabel:BULAN_SHORT[nd.getMonth()]+' '+nd.getFullYear(),reko};
 }
 
-// ── Export Excel ─────────────────────────────────────────────
+// ── Export Excel ───────────────────────────────────────────────
 function exportExcel(records,bulanIdx,tahun){
-  const XLSX=window.XLSX;const nb=BULAN_FULL[bulanIdx];const wb=XLSX.utils.book_new();
+  const XLSX=window.XLSX,nb=BULAN_FULL[bulanIdx],wb=XLSX.utils.book_new();
   const rows=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulanIdx&&d.getFullYear()===tahun;}).sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
-  const hdr=['Tanggal','Daun','Pen.Daun','Sisa Mkn','Pen.Makan','Sub Org','Kertas','Pen.Kertas','Plastik','Pen.Plastik','Lain','Pen.Lain','Sub Anorg','TOTAL','Ket'];
-  const body=rows.map(r=>[r.tanggal,vNum(r.daun),r.pen_daun||'-',vNum(r.makan),r.pen_makan||'-',sumGrup(r,'organik'),vNum(r.kertas),r.pen_kertas||'-',vNum(r.plastik),r.pen_plastik||'-',vNum(r.lain),r.pen_lain||'-',sumGrup(r,'anorganik'),sumAll(r),r.keterangan||'']);
-  const ws1=XLSX.utils.aoa_to_sheet([[`DATA HARIAN — ${nb} ${tahun}`],[],hdr,...body]);
-  ws1['!cols']=[11,8,14,11,14,10,8,14,9,14,8,14,12,9,16].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb,ws1,'Data Harian');
+  const hdr=['Tgl','Lokasi','ULTG','Daun','P.Daun','Sisa Mkn','P.Makan','S.Org','Kertas','P.Kertas','Plastik','P.Plastik','Lain','P.Lain','S.Anorg','TOTAL','Ket'];
+  const body=rows.map(r=>[r.tanggal,r.lokasiNama||'-',r.lokasiULTG||'-',vNum(r.daun),r.pen_daun||'-',vNum(r.makan),r.pen_makan||'-',sumGrup(r,'organik'),vNum(r.kertas),r.pen_kertas||'-',vNum(r.plastik),r.pen_plastik||'-',vNum(r.lain),r.pen_lain||'-',sumGrup(r,'anorganik'),sumAll(r),r.keterangan||'']);
+  const ws=XLSX.utils.aoa_to_sheet([[`DATA HARIAN — ${nb} ${tahun}`],[`Dicetak: ${new Date().toLocaleDateString('id-ID')}`],[],hdr,...body]);
+  ws['!cols']=[10,22,18,8,14,10,14,10,8,14,8,14,8,14,12,9,18].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb,ws,'Data Harian');
   XLSX.writeFile(wb,`Laporan_Sampah_${nb}_${tahun}.xlsx`);
 }
 
-// ── Shared Components ────────────────────────────────────────
+// ── Shared UI ──────────────────────────────────────────────────
 const pPen=p=>p==='Komposting'?'p-ko':p==='Bank Sampah'?'p-bs':'p-tp';
 function Pill({p}){return <span className={`pill ${pPen(p)}`}>{p}</span>;}
 function Toast({msg}){return msg?<div className="toast">{msg}</div>:null;}
 function St({label,value,unit,color}){return(<div className="st" style={{'--stc':color}}><div className="st-lbl">{label}</div><div className="st-val">{value}<span className="st-unit">{unit}</span></div></div>);}
 function Pr({label,val,total,color,icon}){const p=total?val/total:0;return(<div className="pr"><div className="pr-h"><span style={{color,fontWeight:600}}>{icon} {label}</span><span style={{color:'var(--muted)'}}>{fmtKg(val)} ({(p*100).toFixed(1)}%)</span></div><div className="pr-b"><div className="pr-f" style={{width:`${p*100}%`,background:color}}/></div></div>);}
-function MonthSel({bulan,setBulan,tahun,setTahun}){const ss={background:'var(--bg)',border:'1px solid var(--border)',borderRadius:7,color:'var(--text)',padding:'6px 10px',fontFamily:"'DM Sans',sans-serif",fontSize:12,outline:'none',width:'auto'};return(<div style={{display:'flex',gap:9,marginBottom:14,alignItems:'center'}}><select value={bulan} onChange={e=>setBulan(Number(e.target.value))} style={ss}>{BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}</select><select value={tahun} onChange={e=>setTahun(Number(e.target.value))} style={ss}>{TAHUN_OPT.map(y=><option key={y}>{y}</option>)}</select></div>);}
-function SkorRing({skor}){const R=30,C=2*Math.PI*R,fill=C*(1-skor/100),color=skor>=75?'var(--g1)':skor>=50?'var(--g2)':'var(--g3)';return(<div className="skor-ring"><svg className="skor-svg" viewBox="0 0 72 72"><circle className="skor-bg" cx="36" cy="36" r={R}/><circle className="skor-fg" cx="36" cy="36" r={R} stroke={color} strokeDasharray={C} strokeDashoffset={fill}/></svg><div className="skor-num" style={{color}}>{skor}</div></div>);}
-function JenisCard({j,form,setField}){const vol=form[j.key]||'';const pen=form[penKey(j.key)]||'Komposting';const has=vNum(vol)>0;return(<div className="jk" style={{'--jc':j.color,borderColor:has?j.color:'var(--border)'}}><div className="jk-head" style={{background:has?`${j.color}12`:'transparent'}}><div className="jk-icon-lbl"><span>{j.icon}</span><span>{j.label}</span></div>{has&&<span style={{fontSize:10,fontWeight:700,color:j.color}}>{fmt(vol)}kg</span>}</div><div className="jk-body"><div className="jk-vol-row"><input type="number" min="0" step="0.1" placeholder="0.0" className="jk-vol" style={{color:has?j.color:'var(--text)'}} value={vol} onChange={e=>setField(j.key,e.target.value)}/><span className="jk-kg">kg</span></div><select className="jk-sel" value={pen} onChange={e=>setField(penKey(j.key),e.target.value)} style={{borderColor:pen==='Komposting'?'rgba(93,189,106,.3)':pen==='Bank Sampah'?'rgba(90,168,214,.3)':'rgba(224,112,80,.3)'}}>{PENGELOLAAN.map(p=><option key={p}>{p}</option>)}</select></div></div>);}
-
-// ── Warna tipe lokasi ────────────────────────────────────────
-function warnaTipe(tipe){
-  if(tipe==='KANTOR')return'#10b981';
-  if(tipe==='ULTG')return'#f59e0b';
-  if(tipe==='GIS')return'#8b5cf6';
-  if(tipe==='GITET')return'#ec4899';
-  return'#1e90ff';
-}
-function iconTipe(tipe){
-  if(tipe==='KANTOR')return'🏛';
-  if(tipe==='ULTG')return'🏢';
-  if(tipe==='GIS')return'⚡';
-  if(tipe==='GITET')return'🔋';
-  return'⚡';
-}
-function shapeClass(tipe){
-  return tipe==='ULTG'||tipe==='KANTOR'?'square':'circle';
-}
+function MonthSel({bulan,setBulan,tahun,setTahun}){const ss={background:'var(--bg)',border:'1px solid var(--border)',borderRadius:7,color:'var(--text)',padding:'5px 9px',fontFamily:"'DM Sans',sans-serif",fontSize:11,outline:'none',width:'auto'};return(<div style={{display:'flex',gap:8,marginBottom:12,alignItems:'center'}}><select value={bulan} onChange={e=>setBulan(Number(e.target.value))} style={ss}>{BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}</select><select value={tahun} onChange={e=>setTahun(Number(e.target.value))} style={ss}>{TAHUN_OPT.map(y=><option key={y}>{y}</option>)}</select></div>);}
+function SkorRing({skor}){const R=27,C=2*Math.PI*R,fill=C*(1-skor/100),color=skor>=75?'var(--g1)':skor>=50?'var(--g2)':'var(--g3)';return(<div className="skor-ring"><svg className="skor-svg" viewBox="0 0 66 66"><circle className="skor-bg" cx="33" cy="33" r={R}/><circle className="skor-fg" cx="33" cy="33" r={R} stroke={color} strokeDasharray={C} strokeDashoffset={fill}/></svg><div className="skor-num" style={{color}}>{skor}</div></div>);}
+function JenisCard({j,form,setField}){const vol=form[j.key]||'';const pen=form[penKey(j.key)]||'Komposting';const has=vNum(vol)>0;return(<div className="jk" style={{'--jc':j.color,borderColor:has?j.color:'var(--border)'}}><div className="jk-head" style={{background:has?`${j.color}10`:'transparent'}}><div className="jk-lbl">{j.icon} {j.label}</div>{has&&<span style={{fontSize:9,fontWeight:700,color:j.color}}>{fmt(vol)}kg</span>}</div><div className="jk-body"><div className="jk-vrow"><input type="number" min="0" step="0.1" placeholder="0.0" className="jk-vol" style={{color:has?j.color:'var(--text)'}} value={vol} onChange={e=>setField(j.key,e.target.value)}/><span className="jk-kg">kg</span></div><select className="jk-sel" value={pen} onChange={e=>setField(penKey(j.key),e.target.value)} style={{borderColor:pen==='Komposting'?'rgba(93,189,106,.25)':pen==='Bank Sampah'?'rgba(90,168,214,.25)':'rgba(224,112,80,.25)'}}>{PENGELOLAAN.map(p=><option key={p}>{p}</option>)}</select></div></div>);}
 
 // ══════════════════════════════════════════════════════════════
-// PAGE PETA
+// MAP SIDEBAR PANEL (kolom tengah)
 // ══════════════════════════════════════════════════════════════
-function PagePeta({sampahLokasi,setSampahLokasi,showToast}){
-  const mapRef    =useRef(null);
-  const leafRef   =useRef(null);
-  const [filterULTG,setFilterULTG]=useState('Semua');
+function MapSidebar({sampahLokasi,filterULTG,setFilterULTG,selectedId,setSelectedId,onFlyTo,onInputClick}){
+  const [search,setSearch]=useState('');
   const [filterTipe,setFilterTipe]=useState('Semua');
-  const [search,  setSearch]=useState('');
-  const [selected,setSelected]=useState(null);
-  const [panelOpen,setPanelOpen]=useState(false);
-  const [modalLok,setModalLok]=useState(null);
-  const [modalForm,setModalForm]=useState({});
 
-  // Dropdown UPT pilihan untuk INPUT: pilih lokasi dari dropdown
-  const [inputLokId,setInputLokId]=useState(DATA_LOKASI[0].id);
-  const [inputMonth,setInputMonth]=useState(TODAY.getMonth());
-  const [inputYear, setInputYear] =useState(TODAY.getFullYear());
-  const [inputForm, setInputForm] =useState({});
+  const filtered=useMemo(()=>DATA_LOKASI.filter(l=>{
+    const u=filterULTG==='Semua'||l.ultg===filterULTG;
+    const t=filterTipe==='Semua'||l.tipe===filterTipe;
+    const c=!search||l.nama.toLowerCase().includes(search.toLowerCase())||l.kota.toLowerCase().includes(search.toLowerCase());
+    return u&&t&&c;
+  }),[filterULTG,filterTipe,search]);
 
-  const lokasiFiltered=useMemo(()=>{
-    return DATA_LOKASI.filter(l=>{
-      const u=filterULTG==='Semua'||l.ultg===filterULTG||(filterULTG==='ULTG Keramasan'&&l.ultg==='ULTG Keramasan');
-      const t=filterTipe==='Semua'||l.tipe===filterTipe;
-      const c=!search||l.nama.toLowerCase().includes(search.toLowerCase())||l.kota.toLowerCase().includes(search.toLowerCase());
-      return u&&t&&c;
-    });
-  },[filterULTG,filterTipe,search]);
+  // Kelompok per ULTG
+  const grouped=useMemo(()=>{
+    const g={};
+    filtered.forEach(l=>{if(!g[l.ultg])g[l.ultg]=[];g[l.ultg].push(l);});
+    return g;
+  },[filtered]);
 
-  const globalStats=useMemo(()=>{
-    let tot=0,gi=0,ultg=0;
-    DATA_LOKASI.forEach(l=>{const d=sampahLokasi[l.id];if(!d||!d.length)return;const s=totBulanIni(d);tot+=s.total;if(l.tipe==='GI'||l.tipe==='GIS'||l.tipe==='GITET')gi+=s.total;else if(l.tipe==='ULTG')ultg+=s.total;});
-    return{tot,gi,ultg,jGI:DATA_LOKASI.filter(l=>l.tipe!=='ULTG'&&l.tipe!=='KANTOR').length,jULTG:DATA_LOKASI.filter(l=>l.tipe==='ULTG').length};
+  // Stats global
+  const stats=useMemo(()=>{
+    let tot=0;
+    DATA_LOKASI.forEach(l=>{const d=sampahLokasi[l.id];if(d&&d.length)tot+=totBulanIni(d).total;});
+    return{tot,jLok:DATA_LOKASI.filter(l=>l.tipe!=='KANTOR').length};
   },[sampahLokasi]);
 
-  // Init map
+  return(
+    <div className="map-sidebar">
+      {/* Header */}
+      <div className="ms-head">
+        <div className="ms-title">📍 Peta GI & ULTG</div>
+        <div className="ms-filter">
+          <select className="ms-sel" value={filterULTG} onChange={e=>setFilterULTG(e.target.value)}>
+            {ULTG_LIST.map(u=><option key={u}>{u}</option>)}
+          </select>
+          <select className="ms-sel" value={filterTipe} onChange={e=>setFilterTipe(e.target.value)}>
+            {['Semua','GI','GIS','GITET','ULTG'].map(t=><option key={t}>{t}</option>)}
+          </select>
+          <input className="ms-search" placeholder="🔍 Cari lokasi / kota..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        </div>
+      </div>
+
+      {/* Daftar lokasi per ULTG */}
+      <div className="ms-list">
+        {Object.entries(grouped).sort(([a],[b])=>a.localeCompare(b)).map(([uName,loks])=>{
+          const warna=ULTG_WARNA[uName]||'var(--muted)';
+          return(
+            <div key={uName}>
+              <div className="ms-group-head" style={{color:warna}}>
+                <div style={{width:8,height:8,borderRadius:'50%',background:warna,flexShrink:0}}/>
+                {uName}
+              </div>
+              {loks.map(lok=>{
+                const d=sampahLokasi[lok.id]||[];
+                const stat=d.length?totBulanIni(d):{total:0};
+                const isULTG=lok.tipe==='ULTG'||lok.tipe==='KANTOR';
+                const sel=selectedId===lok.id;
+                const mc=warnaTipe(lok.tipe);
+                return(
+                  <div key={lok.id}
+                    className={`ms-item${sel?(isULTG?' sel-ultg':' sel'):''}`}
+                    onClick={()=>{setSelectedId(lok.id);onFlyTo(lok);}}>
+                    <div className="ms-dot" style={{background:mc,borderRadius:lok.tipe==='GI'?'50%':lok.tipe==='ULTG'||lok.tipe==='KANTOR'?'3px':'50%'}}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div className="ms-name" style={{color:sel?mc:'var(--text)'}}>{lok.nama}</div>
+                      <div className="ms-sub">{lok.kota} · <span style={{color:mc,fontWeight:600}}>{lok.tipe}</span></div>
+                    </div>
+                    <div style={{textAlign:'right',flexShrink:0}}>
+                      <div className="ms-vol" style={{color:stat.total>30?'var(--g3)':stat.total>15?'var(--g2)':'var(--muted)'}}>{fmtKg(stat.total)}</div>
+                      <div style={{cursor:'pointer',fontSize:9,color:'var(--pln)',fontWeight:600,marginTop:1}} onClick={e=>{e.stopPropagation();onInputClick(lok);}}>+ Input</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Stats bar bawah */}
+      <div className="ms-stats-bar">
+        <span className="ms-chip">🗑 {fmtKg(stats.tot)}/bln</span>
+        <span className="ms-chip" style={{color:'var(--pln)'}}>⚡ {stats.jLok} titik</span>
+        <span className="ms-chip" style={{color:'var(--ultg)'}}>🏢 {DATA_LOKASI.filter(l=>l.tipe==='ULTG').length} ULTG</span>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// HALAMAN PETA (konten kanan)
+// ══════════════════════════════════════════════════════════════
+function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,setSelectedId,onInputClick}){
+  const leafRef=useRef(null);
+  const markersRef=useRef({});
+
   useEffect(()=>{
     if(leafRef.current)return;
     const L=window.L;
-    const map=L.map('leaflet-map',{center:[-2.98,104.76],zoom:11,zoomControl:true});
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+    const map=L.map('leaflet-map',{center:[-2.98,104.76],zoom:11});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+      attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19
+    }).addTo(map);
     leafRef.current=map;
 
     DATA_LOKASI.forEach(lok=>{
       const c=warnaTipe(lok.tipe);
       const isRound=lok.tipe==='GI'||lok.tipe==='GIS'||lok.tipe==='GITET';
-      const sz=lok.tipe==='ULTG'?32:lok.tipe==='KANTOR'?36:28;
-      const rad=isRound?'50%':'8px';
+      const sz=lok.tipe==='KANTOR'?34:lok.tipe==='ULTG'?30:26;
+      const rad=isRound?'50%':'7px';
       const icon=L.divIcon({
         className:'',
-        html:`<div title="${lok.nama}" style="width:${sz}px;height:${sz}px;border-radius:${rad};background:${c};border:2.5px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:${sz>30?14:11}px;cursor:pointer;box-shadow:0 3px 10px ${c}80;transition:transform .2s">${iconTipe(lok.tipe)}</div>`,
+        html:`<div style="width:${sz}px;height:${sz}px;border-radius:${rad};background:${c};border:2px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:${sz>28?13:10}px;cursor:pointer;box-shadow:0 3px 10px ${c}88;transition:transform .2s" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">${iconTipe(lok.tipe)}</div>`,
         iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],
       });
-      L.marker([lok.lat,lok.lng],{icon}).addTo(map).on('click',()=>{setSelected(lok.id);setPanelOpen(true);map.setView([lok.lat,lok.lng],14,{animate:true});});
+      const d=SAMPAH_AWAL[lok.id]||[];
+      const stat=d.length?totBulanIni(d):{total:0};
+      const marker=L.marker([lok.lat,lok.lng],{icon}).addTo(map);
+      marker.bindPopup(`
+        <div class="pop-wrap">
+          <div class="pop-name">${iconTipe(lok.tipe)} ${lok.nama}</div>
+          <div class="pop-sub">${lok.kota} &nbsp;·&nbsp; ${lok.tipe} &nbsp;·&nbsp; ${lok.ultg}</div>
+          <div class="pop-row"><span class="pop-lbl">Volume/bulan</span><span class="pop-val">${fmtKg(stat.total)}</span></div>
+          <div class="pop-row"><span class="pop-lbl">Organik</span><span class="pop-val">${fmtKg(stat.org||0)}</span></div>
+          <div class="pop-row"><span class="pop-lbl">Anorganik</span><span class="pop-val">${fmtKg(stat.anorg||0)}</span></div>
+          <button class="pop-btn" onclick="window._inputLok&&window._inputLok('${lok.id}')">📥 Input Data Sampah</button>
+        </div>
+      `,{maxWidth:240});
+      marker.on('click',()=>setSelectedId(lok.id));
+      markersRef.current[lok.id]=marker;
     });
+
+    window._inputLok=(id)=>{
+      const l=DATA_LOKASI.find(x=>x.id===id);
+      if(l)onInputClick(l);
+    };
     return()=>{if(leafRef.current){leafRef.current.remove();leafRef.current=null;}};
   },[]);
 
-  function flyTo(lok){setSelected(lok.id);setPanelOpen(true);if(leafRef.current)leafRef.current.setView([lok.lat,lok.lng],14,{animate:true});}
+  // Fly to selected
+  useEffect(()=>{
+    if(!selectedId||!leafRef.current)return;
+    const lok=DATA_LOKASI.find(l=>l.id===selectedId);
+    if(lok){
+      leafRef.current.setView([lok.lat,lok.lng],14,{animate:true});
+      const m=markersRef.current[lok.id];
+      if(m)m.openPopup();
+    }
+  },[selectedId]);
 
-  // Simpan data dari dropdown input
-  function saveInputDropdown(){
-    const lok=DATA_LOKASI.find(l=>l.id===inputLokId);
-    if(!lok)return;
-    if(sumAll(inputForm)===0){showToast('⚠️ Isi minimal satu jenis sampah');return;}
-    const entry={...inputForm,bulan:inputMonth,tahun:inputYear};
+  // Filter visibility
+  useEffect(()=>{
+    if(!leafRef.current)return;
+    DATA_LOKASI.forEach(lok=>{
+      const m=markersRef.current[lok.id];
+      if(!m)return;
+      const visible=filterULTG==='Semua'||lok.ultg===filterULTG;
+      if(visible){if(!leafRef.current.hasLayer(m))m.addTo(leafRef.current);}
+      else{if(leafRef.current.hasLayer(m))m.remove();}
+    });
+  },[filterULTG]);
+
+  return(
+    <div className="content-map">
+      <div id="leaflet-map"/>
+      <div className="map-legend">
+        <div style={{fontSize:8,fontWeight:700,color:'var(--muted)',letterSpacing:1,textTransform:'uppercase',marginBottom:6}}>LEGENDA</div>
+        {[{c:'#10b981',r:false,l:'Kantor UPT'},{c:'#f59e0b',r:false,l:'ULTG'},{c:'#1e90ff',r:true,l:'GI'},{c:'#8b5cf6',r:true,l:'GIS'},{c:'#ec4899',r:true,l:'GITET'}].map(x=>(
+          <div key={x.l} className="leg-i"><div style={{width:9,height:9,background:x.c,borderRadius:x.r?'50%':'3px',border:'1.5px solid rgba(255,255,255,.3)',flexShrink:0}}/>{x.l}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// MODAL INPUT SAMPAH PER LOKASI
+// ══════════════════════════════════════════════════════════════
+function ModalInput({lok,sampahLokasi,setSampahLokasi,showToast,onClose}){
+  const [bulan,setBulan]=useState(TODAY.getMonth());
+  const [tahun,setTahun]=useState(TODAY.getFullYear());
+  const existing=useMemo(()=>{
+    const d=sampahLokasi[lok.id]||[];
+    return d.find(e=>e.bulan===bulan&&e.tahun===tahun)||{};
+  },[sampahLokasi,lok.id,bulan,tahun]);
+  const [form,setForm]=useState({...existing});
+
+  useEffect(()=>{
+    const d=sampahLokasi[lok.id]||[];
+    const found=d.find(e=>e.bulan===bulan&&e.tahun===tahun)||{};
+    setForm({...found});
+  },[bulan,tahun]);
+
+  const setF=(k,v)=>setForm(f=>({...f,[k]:v}));
+
+  function save(){
+    if(sumAll(form)===0){showToast('⚠️ Isi minimal satu jenis sampah');return;}
+    const entry={...form,bulan,tahun,
+      pen_daun:form.pen_daun||'Komposting',
+      pen_makan:form.pen_makan||'Komposting',
+      pen_kertas:form.pen_kertas||'Bank Sampah',
+      pen_plastik:form.pen_plastik||'Bank Sampah',
+      pen_lain:form.pen_lain||'TPA',
+    };
     setSampahLokasi(prev=>{
       const arr=[...(prev[lok.id]||[])];
       const idx=arr.findIndex(e=>e.bulan===entry.bulan&&e.tahun===entry.tahun);
@@ -483,320 +641,296 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast}){
       arr.sort((a,b)=>a.tahun!==b.tahun?a.tahun-b.tahun:a.bulan-b.bulan);
       return{...prev,[lok.id]:arr};
     });
-    setInputForm({});showToast(`✅ Data sampah ${lok.nama} disimpan!`);
+    showToast(`✅ Data ${lok.nama} berhasil disimpan!`);
+    onClose();
   }
 
-  const selLok=selected?DATA_LOKASI.find(l=>l.id===selected):null;
-  const selData=selected?sampahLokasi[selected]:null;
-  const selStat=selData?totBulanIni(selData):null;
-
-  // Kelompokkan lokasi per ULTG untuk panel kiri
-  const grouped=useMemo(()=>{
-    const g={};
-    lokasiFiltered.forEach(l=>{
-      if(!g[l.ultg])g[l.ultg]=[];
-      g[l.ultg].push(l);
-    });
-    return g;
-  },[lokasiFiltered]);
+  const tOrg=sumGrup(form,'organik'),tAnorg=sumGrup(form,'anorganik');
 
   return(
-    <div className="content-peta">
-      {/* Dropdown UPT input bar */}
-      <div className="upt-select-bar">
-        <span style={{fontSize:11,fontWeight:700,color:'var(--muted)',letterSpacing:.8,textTransform:'uppercase',flexShrink:0}}>📥 Input Sampah:</span>
-        <select className="upt-sel" value={inputLokId} onChange={e=>{setInputLokId(e.target.value);setInputForm({});}}>
-          <optgroup label="── UPT PLN Palembang ──">
-            {DATA_LOKASI.filter(l=>l.tipe==='KANTOR').map(l=><option key={l.id} value={l.id}>{l.nama}</option>)}
-          </optgroup>
-          {['ULTG Keramasan','ULTG Borang','ULTG Betung','ULTG Boombaru'].map(u=>(
-            <optgroup key={u} label={`── ${u} ──`}>
-              {DATA_LOKASI.filter(l=>l.ultg===u).map(l=><option key={l.id} value={l.id}>[{l.tipe}] {l.nama}</option>)}
-            </optgroup>
-          ))}
-        </select>
-        <select value={inputMonth} onChange={e=>setInputMonth(Number(e.target.value))} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:7,color:'var(--text)',padding:'6px 10px',fontFamily:"'DM Sans',sans-serif",fontSize:11,outline:'none',width:'auto'}}>
-          {BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}
-        </select>
-        <select value={inputYear} onChange={e=>setInputYear(Number(e.target.value))} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:7,color:'var(--text)',padding:'6px 10px',fontFamily:"'DM Sans',sans-serif",fontSize:11,outline:'none',width:'auto'}}>
-          {TAHUN_OPT.map(y=><option key={y}>{y}</option>)}
-        </select>
-        <button className="btn btn-p" style={{padding:'6px 14px',fontSize:11}} onClick={()=>setModalLok(DATA_LOKASI.find(l=>l.id===inputLokId))}>
-          ✏️ Isi Data
-        </button>
-      </div>
-
-      {/* Top filter bar */}
-      <div className="map-topbar">
-        <span style={{fontSize:10,fontWeight:700,color:'var(--muted)',letterSpacing:1,textTransform:'uppercase'}}>Filter:</span>
-        <select className="map-filter-sel" value={filterULTG} onChange={e=>setFilterULTG(e.target.value)}>
-          {ULTG_LIST.map(u=><option key={u}>{u}</option>)}
-        </select>
-        <select className="map-filter-sel" value={filterTipe} onChange={e=>setFilterTipe(e.target.value)}>
-          {['Semua','GI','GIS','GITET','ULTG','KANTOR'].map(t=><option key={t}>{t}</option>)}
-        </select>
-        <input className="map-search" placeholder="🔍 Cari lokasi..." value={search} onChange={e=>setSearch(e.target.value)}/>
-        <span className="map-chip">🗑 {fmtKg(globalStats.tot)}/bln</span>
-        <span className="map-chip" style={{color:'#7ec8ff',borderColor:'rgba(30,144,255,.3)'}}>⚡ {globalStats.jGI} GI/GIS/GITET</span>
-        <span className="map-chip" style={{color:'#fcd34d',borderColor:'rgba(245,158,11,.3)'}}>🏢 {globalStats.jULTG} ULTG</span>
-      </div>
-
-      <div id="map-container">
-        <div id="leaflet-map" ref={mapRef}/>
-
-        {/* Panel kiri - daftar lokasi */}
-        <div className="loc-panel">
-          <div className="loc-panel-head">
-            <div style={{fontSize:10,fontWeight:700,color:'var(--muted)',letterSpacing:1,textTransform:'uppercase'}}>{lokasiFiltered.length} Lokasi</div>
+    <div className="modal-ov" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal-box">
+        <div className="modal-head">
+          <div>
+            <div className="modal-title">{iconTipe(lok.tipe)} {lok.nama}</div>
+            <div style={{fontSize:10,color:'var(--muted)',marginTop:2}}>
+              {lok.kota} &nbsp;·&nbsp;
+              <span style={{color:warnaTipe(lok.tipe),fontWeight:700}}>{lok.tipe}</span>
+              &nbsp;·&nbsp; {lok.ultg}
+            </div>
           </div>
-          <div style={{flex:1,overflowY:'auto'}}>
-            {Object.entries(grouped).sort(([a],[b])=>a.localeCompare(b)).map(([ultgName,loks])=>(
-              <div key={ultgName}>
-                <div className="loc-group-head" style={{color:warnaTipe(loks[0].tipe==='KANTOR'?'KANTOR':'ULTG')}}>
-                  <span style={{width:8,height:8,borderRadius:'50%',background:warnaTipe(loks[0].tipe==='KANTOR'?'KANTOR':'ULTG'),flexShrink:0,display:'inline-block'}}/>
-                  {ultgName}
-                </div>
-                {loks.sort((a,b)=>(TIPE_ORDER[a.tipe]||2)-(TIPE_ORDER[b.tipe]||2)).map(lok=>{
-                  const d=sampahLokasi[lok.id]||[];
-                  const stat=d.length?totBulanIni(d):{total:0};
-                  const isULTG=lok.tipe==='ULTG',isKantor=lok.tipe==='KANTOR';
-                  const cls=`loc-item${selected===lok.id?' sel':''}${isULTG?' ultg-item':''}${isKantor?' kantor-item':''}`;
-                  return(
-                    <div key={lok.id} className={cls} onClick={()=>flyTo(lok)}>
-                      <div className="loc-dot" style={{background:warnaTipe(lok.tipe),borderRadius:lok.tipe==='GI'?'50%':'3px',minWidth:9}}/>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div className="loc-name">{lok.nama}</div>
-                        <div className="loc-sub">{lok.kota} · {lok.tipe}</div>
-                      </div>
-                      <div style={{textAlign:'right'}}>
-                        <div className="loc-vol" style={{color:stat.total>30?'var(--g3)':stat.total>15?'var(--g2)':'var(--text)'}}>{fmtKg(stat.total)}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Pilih periode */}
+        <div className="g2" style={{marginBottom:12}}>
+          <div><label>Bulan</label>
+            <select value={bulan} onChange={e=>setBulan(Number(e.target.value))}>
+              {BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}
+            </select>
+          </div>
+          <div><label>Tahun</label>
+            <select value={tahun} onChange={e=>setTahun(Number(e.target.value))}>
+              {TAHUN_OPT.map(y=><option key={y}>{y}</option>)}
+            </select>
           </div>
         </div>
 
-        {/* Panel kanan - detail lokasi */}
-        <div className={`detail-panel${panelOpen?' open':''}`}>
-          <div className="dp-head">
-            {selLok&&(
-              <div>
-                <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:3}}>
-                  <span style={{fontSize:20}}>{iconTipe(selLok.tipe)}</span>
-                  <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'var(--white)'}}>{selLok.nama}</div>
-                </div>
-                <div style={{fontSize:10,color:'var(--muted)'}}>{selLok.kota} &nbsp;·&nbsp;
-                  <span style={{color:warnaTipe(selLok.tipe),fontWeight:700}}>{selLok.tipe}</span>
-                  &nbsp;·&nbsp; {selLok.ultg}
-                </div>
-              </div>
-            )}
-            <button className="dp-close" onClick={()=>setPanelOpen(false)}>✕</button>
-          </div>
-
-          {selLok&&(
-            <div className="dp-body">
-              {/* Stat sampah */}
-              <div className="card" style={{marginBottom:10}}>
-                <div className="sec-lbl">Sampah Bulan Ini</div>
-                {selStat&&selStat.total>0?(
-                  <>
-                    <div className="g3" style={{gap:7,marginBottom:10}}>
-                      {[{l:'Total',v:selStat.total,c:'var(--white)'},{l:'Organik',v:selStat.org,c:'var(--g1)'},{l:'Anorganik',v:selStat.anorg,c:'var(--g2)'}].map(x=>(
-                        <div key={x.l} style={{background:'var(--bg)',borderRadius:7,padding:'7px 9px',textAlign:'center'}}>
-                          <div style={{fontSize:8,color:'var(--muted)',textTransform:'uppercase',letterSpacing:.8,marginBottom:2}}>{x.l}</div>
-                          <div style={{fontSize:13,fontFamily:'Syne,sans-serif',fontWeight:700,color:x.c}}>{fmt(x.v)}</div>
-                          <div style={{fontSize:8,color:'var(--muted)'}}>kg</div>
-                        </div>
-                      ))}
-                    </div>
-                    {JENIS.map(j=>{
-                      const last=selData&&selData.length?selData[selData.length-1]:{};
-                      const v=vNum(last[j.key]);
-                      return(
-                        <div key={j.key} style={{marginBottom:5}}>
-                          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,marginBottom:2}}>
-                            <span style={{color:j.color}}>{j.icon} {j.label}</span>
-                            <span style={{color:'var(--muted)'}}>{fmtKg(v)}</span>
-                          </div>
-                          <div style={{height:3,background:'var(--border)',borderRadius:2,overflow:'hidden'}}>
-                            <div style={{height:'100%',width:`${selStat.total>0?v/selStat.total*100:0}%`,background:j.color,borderRadius:2}}/>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </>
-                ):(
-                  <div style={{textAlign:'center',padding:'14px',color:'var(--muted)',fontSize:11}}>Belum ada data.<br/>Gunakan dropdown atas untuk input.</div>
-                )}
-              </div>
-
-              {/* Tren */}
-              {selData&&selData.length>1&&(
-                <div className="card" style={{marginBottom:10}}>
-                  <div className="sec-lbl">Tren 3 Bulan</div>
-                  <div style={{display:'flex',alignItems:'flex-end',gap:5,height:60}}>
-                    {selData.slice(-3).map((d,i)=>{
-                      const t=sumAll(d);
-                      const mx=Math.max(...selData.slice(-3).map(x=>sumAll(x)),1);
-                      const h=Math.max((t/mx)*48,3);
-                      const org=sumGrup(d,'organik'),ho=Math.max((org/mx)*48,2);
-                      return(
-                        <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
-                          <span style={{fontSize:8,color:'var(--muted)'}}>{fmt(t)}</span>
-                          <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-end',height:48,gap:1,width:'100%'}}>
-                            <div style={{width:'100%',height:ho,background:'var(--g1)',borderRadius:'2px 2px 0 0'}}/>
-                            <div style={{width:'100%',height:h-ho,background:'var(--g2)',borderRadius:'2px 2px 0 0'}}/>
-                          </div>
-                          <span style={{fontSize:7,color:'var(--muted)'}}>{BULAN_SHORT[d.bulan]}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <button className="btn btn-p" style={{width:'100%',justifyContent:'center',fontSize:12}} onClick={()=>setModalLok(selLok)}>
-                📥 Input Data Sampah
-              </button>
-            </div>
-          )}
+        {/* Organik */}
+        <div style={{padding:'10px 11px',background:'rgba(93,189,106,.05)',border:'1px solid rgba(93,189,106,.15)',borderRadius:8,marginBottom:9}}>
+          <div style={{fontSize:9,fontWeight:700,color:'var(--g1)',marginBottom:8,letterSpacing:.5,textTransform:'uppercase'}}>🌿 Sampah Organik {tOrg>0&&<span style={{fontWeight:700,color:'var(--g1)'}}>— {fmtKg(tOrg)}</span>}</div>
+          <div className="g2">{JENIS_ORG.map(j=><JenisCard key={j.key} j={j} form={form} setField={setF}/>)}</div>
         </div>
 
-        {/* Legend */}
-        <div className="map-legend">
-          <div style={{fontSize:9,fontWeight:700,color:'var(--muted)',letterSpacing:1,textTransform:'uppercase',marginBottom:7}}>LEGENDA</div>
-          {[
-            {color:'#10b981',shape:'sq',label:'Kantor UPT'},
-            {color:'#f59e0b',shape:'sq',label:'ULTG'},
-            {color:'#1e90ff',shape:'rd',label:'Gardu Induk (GI)'},
-            {color:'#8b5cf6',shape:'rd',label:'GIS'},
-            {color:'#ec4899',shape:'rd',label:'GITET'},
-          ].map(x=>(
-            <div key={x.label} className="leg-item">
-              <div style={{width:10,height:10,background:x.color,borderRadius:x.shape==='rd'?'50%':'3px',border:'1.5px solid rgba(255,255,255,.3)',flexShrink:0}}/>
-              <span>{x.label}</span>
-            </div>
-          ))}
-          <div style={{margin:'7px 0 5px',height:'1px',background:'var(--border)'}}/>
-          <div style={{fontSize:9,fontWeight:700,color:'var(--muted)',letterSpacing:1,textTransform:'uppercase',marginBottom:5}}>Volume/Bulan</div>
-          {[{c:'var(--text)',l:'Normal (<15 kg)'},{c:'var(--g2)',l:'Sedang (15–30 kg)'},{c:'var(--g3)',l:'Tinggi (>30 kg)'}].map(x=>(
-            <div key={x.l} className="leg-item">
-              <div style={{width:8,height:8,borderRadius:'50%',background:x.c,flexShrink:0}}/>
-              <span style={{color:x.c}}>{x.l}</span>
-            </div>
-          ))}
+        {/* Anorganik */}
+        <div style={{padding:'10px 11px',background:'rgba(201,168,76,.05)',border:'1px solid rgba(201,168,76,.15)',borderRadius:8,marginBottom:12}}>
+          <div style={{fontSize:9,fontWeight:700,color:'var(--g2)',marginBottom:8,letterSpacing:.5,textTransform:'uppercase'}}>🧴 Sampah Anorganik {tAnorg>0&&<span style={{fontWeight:700,color:'var(--g2)'}}>— {fmtKg(tAnorg)}</span>}</div>
+          <div className="g3">{JENIS_ANORG.map(j=><JenisCard key={j.key} j={j} form={form} setField={setF}/>)}</div>
+        </div>
+
+        {/* Preview */}
+        {sumAll(form)>0&&(
+          <div style={{background:'rgba(93,189,106,.07)',border:'1px solid rgba(93,189,106,.2)',borderRadius:7,padding:'8px 10px',marginBottom:11,fontSize:11,display:'flex',gap:14,flexWrap:'wrap'}}>
+            🌿 <strong style={{color:'var(--g1)'}}>{fmtKg(tOrg)}</strong>
+            🧴 <strong style={{color:'var(--g2)'}}>{fmtKg(tAnorg)}</strong>
+            📦 Total: <strong style={{color:'var(--white)'}}>{fmtKg(sumAll(form))}</strong>
+          </div>
+        )}
+
+        <div className="btn-row">
+          <button className="btn btn-p" onClick={save}>✓ Simpan Data</button>
+          <button className="btn btn-s" onClick={onClose}>Batal</button>
         </div>
       </div>
-
-      {/* Modal input per lokasi */}
-      {modalLok&&(
-        <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)setModalLok(null)}}>
-          <div className="modal-box">
-            <div className="modal-head">
-              <div>
-                <div className="modal-title">{iconTipe(modalLok.tipe)} {modalLok.nama}</div>
-                <div style={{fontSize:10,color:'var(--muted)',marginTop:2}}>{modalLok.kota} · {modalLok.tipe} · {modalLok.ultg}</div>
-              </div>
-              <button className="modal-close" onClick={()=>setModalLok(null)}>✕</button>
-            </div>
-
-            {/* Pilih bulan/tahun */}
-            <div className="g2" style={{marginBottom:14}}>
-              <div><label>Bulan</label>
-                <select value={inputMonth} onChange={e=>setInputMonth(Number(e.target.value))}>
-                  {BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}
-                </select>
-              </div>
-              <div><label>Tahun</label>
-                <select value={inputYear} onChange={e=>setInputYear(Number(e.target.value))}>
-                  {TAHUN_OPT.map(y=><option key={y}>{y}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div style={{padding:'10px 12px',background:'rgba(93,189,106,.05)',border:'1px solid rgba(93,189,106,.15)',borderRadius:9,marginBottom:10}}>
-              <div style={{fontSize:10,fontWeight:700,color:'var(--g1)',marginBottom:8}}>🌿 SAMPAH ORGANIK</div>
-              <div className="g2">{JENIS_ORG.map(j=><JenisCard key={j.key} j={j} form={inputForm} setField={(k,v)=>setInputForm(f=>({...f,[k]:v}))}/>)}</div>
-            </div>
-            <div style={{padding:'10px 12px',background:'rgba(201,168,76,.05)',border:'1px solid rgba(201,168,76,.15)',borderRadius:9,marginBottom:12}}>
-              <div style={{fontSize:10,fontWeight:700,color:'var(--g2)',marginBottom:8}}>🧴 SAMPAH ANORGANIK</div>
-              <div className="g3">{JENIS_ANORG.map(j=><JenisCard key={j.key} j={j} form={inputForm} setField={(k,v)=>setInputForm(f=>({...f,[k]:v}))}/>)}</div>
-            </div>
-
-            {sumAll(inputForm)>0&&(
-              <div style={{background:'rgba(93,189,106,.07)',border:'1px solid rgba(93,189,106,.2)',borderRadius:7,padding:'8px 11px',marginBottom:12,fontSize:11}}>
-                🌿 <strong style={{color:'var(--g1)'}}>{fmtKg(sumGrup(inputForm,'organik'))}</strong> &nbsp;
-                🧴 <strong style={{color:'var(--g2)'}}>{fmtKg(sumGrup(inputForm,'anorganik'))}</strong> &nbsp;
-                📦 Total: <strong style={{color:'var(--white)'}}>{fmtKg(sumAll(inputForm))}</strong>
-              </div>
-            )}
-
-            <div className="btn-row">
-              <button className="btn btn-p" onClick={saveInputDropdown}>✓ Simpan Data</button>
-              <button className="btn btn-s" onClick={()=>setModalLok(null)}>Batal</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 // ══════════════════════════════════════════════════════════════
-// PAGES: INPUT, DATA, LAPORAN, AI, EKSPOR
+// PAGE: INPUT HARIAN (dengan dropdown lokasi)
 // ══════════════════════════════════════════════════════════════
-function PageInput({form,setField,onSubmit,onReset,sampahLokasi,setSampahLokasi,showToast}){
-  const totOrg=JENIS_ORG.reduce((s,j)=>s+vNum(form[j.key]),0);
-  const totAnorg=JENIS_ANORG.reduce((s,j)=>s+vNum(form[j.key]),0);
-  const totAll=totOrg+totAnorg;
-  return(<>
-    {/* Shortcut input per lokasi */}
-    <div className="card" style={{borderColor:'rgba(30,144,255,.25)',background:'rgba(30,144,255,.04)',marginBottom:14}}>
-      <div className="card-title" style={{marginBottom:8}}>
-        🗺 Input Cepat Per Lokasi GI / ULTG
-        <span style={{marginLeft:'auto',fontSize:10,color:'var(--pln)',fontWeight:600}}>Pilih lokasi dari dropdown</span>
-      </div>
-      <div style={{fontSize:11,color:'var(--muted)'}}>Untuk input data sampah per lokasi GI/ULTG, gunakan menu <strong style={{color:'var(--pln)'}}>🗺 Peta GI & ULTG</strong> → dropdown "Input Sampah" di bagian atas peta.</div>
-    </div>
+function PageInput({records,setRecords,sampahLokasi,setSampahLokasi,showToast}){
+  // Mode: 'lokasi' = input per lokasi, 'umum' = input harian umum
+  const [mode,setMode]=useState('lokasi');
+  const [lokId,setLokId]=useState(DATA_LOKASI[0].id);
+  const [bulan,setBulan]=useState(TODAY.getMonth());
+  const [tahun,setTahun]=useState(TODAY.getFullYear());
+  const [lokForm,setLokForm]=useState({});
 
-    <div className="card"><div className="card-title">🗓 Tanggal Pencatatan (Data Umum)</div>
-      <div style={{maxWidth:220}}><input type="date" value={form.tanggal} onChange={e=>setField('tanggal',e.target.value)}/></div></div>
-    <div className="card">
-      <div className="card-title">🌿 Sampah Organik{totOrg>0&&<span style={{marginLeft:'auto',color:'var(--c-daun)',fontSize:12}}>{fmtKg(totOrg)}</span>}</div>
-      <div className="sec-strip ss-org" style={{fontSize:11}}>Volume & metode pengelolaan per jenis</div>
-      <div className="g2" style={{marginBottom:9}}>{JENIS_ORG.map(j=><JenisCard key={j.key} j={j} form={form} setField={setField}/>)}</div>
-      {totOrg>0&&<div style={{display:'flex',justifyContent:'flex-end',padding:'6px 10px',background:'rgba(93,189,106,.06)',borderRadius:7,fontSize:11}}><span style={{color:'var(--muted)'}}>Sub-total:&nbsp;</span><strong style={{color:'var(--c-daun)'}}>{fmtKg(totOrg)}</strong></div>}
-    </div>
-    <div className="card">
-      <div className="card-title">🧴 Sampah Anorganik{totAnorg>0&&<span style={{marginLeft:'auto',color:'var(--c-kertas)',fontSize:12}}>{fmtKg(totAnorg)}</span>}</div>
-      <div className="sec-strip ss-anorg" style={{fontSize:11}}>Volume & metode pengelolaan per jenis</div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:9,marginBottom:9}}>{JENIS_ANORG.map(j=><JenisCard key={j.key} j={j} form={form} setField={setField}/>)}</div>
-      {totAnorg>0&&<div style={{display:'flex',justifyContent:'flex-end',padding:'6px 10px',background:'rgba(201,168,76,.06)',borderRadius:7,fontSize:11}}><span style={{color:'var(--muted)'}}>Sub-total:&nbsp;</span><strong style={{color:'var(--c-kertas)'}}>{fmtKg(totAnorg)}</strong></div>}
-    </div>
-    <div className="card">
-      <div className="card-title">📝 Simpan</div>
-      <div className="fld"><label>Catatan (opsional)</label><textarea rows={2} placeholder="Kondisi khusus, event, dll..." value={form.keterangan} onChange={e=>setField('keterangan',e.target.value)}/></div>
-      {totAll>0&&(<div className="pv-box"><div className="pv-title">Pratinjau</div><div className="pv-grid">{JENIS.filter(j=>vNum(form[j.key])>0).map(j=>(<div key={j.key} className="pv-item"><div className="pv-lbl">{j.icon} {j.label}</div><div className="pv-val" style={{color:j.color}}>{fmtKg(form[j.key])}</div></div>))}</div><div className="pv-total"><span>🌿 Organik: <strong style={{color:'var(--c-daun)'}}>{fmtKg(totOrg)}</strong></span><span>🧴 Anorganik: <strong style={{color:'var(--c-kertas)'}}>{fmtKg(totAnorg)}</strong></span><span>📦 Total: <strong style={{color:'var(--white)'}}>{fmtKg(totAll)}</strong></span></div></div>)}
-      <div className="btn-row"><button className="btn btn-p" onClick={onSubmit}>✓ Simpan Data</button><button className="btn btn-s" onClick={onReset}>✕ Reset</button></div>
-    </div>
-  </>);
+  // Form umum
+  const [umForm,setUmForm]=useState({
+    tanggal:TODAY.toISOString().split('T')[0],
+    daun:'',makan:'',kertas:'',plastik:'',lain:'',
+    pen_daun:'Komposting',pen_makan:'Komposting',
+    pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',
+    keterangan:'',
+  });
+
+  const selLok=DATA_LOKASI.find(l=>l.id===lokId);
+  const setLF=(k,v)=>setLokForm(f=>({...f,[k]:v}));
+  const setUF=(k,v)=>setUmForm(f=>({...f,[k]:v}));
+
+  // Saat ganti lokasi/bulan, load data existing
+  useEffect(()=>{
+    const d=sampahLokasi[lokId]||[];
+    const found=d.find(e=>e.bulan===bulan&&e.tahun===tahun)||{};
+    setLokForm({...found});
+  },[lokId,bulan,tahun]);
+
+  function saveLokasi(){
+    if(sumAll(lokForm)===0){showToast('⚠️ Isi minimal satu jenis sampah');return;}
+    const entry={...lokForm,bulan,tahun,
+      pen_daun:lokForm.pen_daun||'Komposting',pen_makan:lokForm.pen_makan||'Komposting',
+      pen_kertas:lokForm.pen_kertas||'Bank Sampah',pen_plastik:lokForm.pen_plastik||'Bank Sampah',pen_lain:lokForm.pen_lain||'TPA',
+    };
+    setSampahLokasi(prev=>{
+      const arr=[...(prev[lokId]||[])];
+      const idx=arr.findIndex(e=>e.bulan===entry.bulan&&e.tahun===entry.tahun);
+      if(idx>=0)arr[idx]=entry;else arr.push(entry);
+      arr.sort((a,b)=>a.tahun!==b.tahun?a.tahun-b.tahun:a.bulan-b.bulan);
+      return{...prev,[lokId]:arr};
+    });
+    // Juga simpan ke records untuk laporan global
+    setRecords(r=>[...r,{...entry,id:Date.now(),tanggal:`${tahun}-${String(bulan+1).padStart(2,'0')}-01`,lokasiId:lokId,lokasiNama:selLok?.nama,lokasiULTG:selLok?.ultg}]);
+    setLokForm({});
+    showToast(`✅ Data ${selLok?.nama} berhasil disimpan!`);
+  }
+
+  function saveUmum(){
+    if(!umForm.tanggal){showToast('⚠️ Pilih tanggal');return;}
+    if(sumAll(umForm)===0){showToast('⚠️ Isi minimal satu jenis');return;}
+    setRecords(r=>[...r,{...umForm,id:Date.now()}]);
+    setUmForm(f=>({...f,daun:'',makan:'',kertas:'',plastik:'',lain:'',keterangan:''}));
+    showToast('✅ Data berhasil disimpan!');
+  }
+
+  const tOrg=sumGrup(mode==='lokasi'?lokForm:umForm,'organik');
+  const tAnorg=sumGrup(mode==='lokasi'?lokForm:umForm,'anorganik');
+  const tAll=tOrg+tAnorg;
+
+  return(
+    <>
+      {/* Mode toggle */}
+      <div className="card" style={{marginBottom:12,padding:'11px 14px'}}>
+        <div style={{display:'flex',gap:8,marginBottom:10}}>
+          {[{id:'lokasi',label:'📍 Input Per Lokasi GI/ULTG'},{id:'umum',label:'📝 Input Harian Umum'}].map(m=>(
+            <button key={m.id} onClick={()=>setMode(m.id)} className={mode===m.id?'btn btn-p':'btn btn-s'} style={{fontSize:11,padding:'5px 12px'}}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        {mode==='lokasi'?(
+          <>
+            {/* Dropdown lokasi */}
+            <div className="fld">
+              <label>Pilih Lokasi</label>
+              <select value={lokId} onChange={e=>setLokId(e.target.value)}>
+                <optgroup label="── Kantor UPT ──">
+                  {DATA_LOKASI.filter(l=>l.tipe==='KANTOR').map(l=><option key={l.id} value={l.id}>{l.nama}</option>)}
+                </optgroup>
+                {['ULTG Keramasan','ULTG Borang','ULTG Betung','ULTG Boombaru'].map(u=>(
+                  <optgroup key={u} label={`── ${u} ──`}>
+                    {DATA_LOKASI.filter(l=>l.ultg===u).map(l=>(
+                      <option key={l.id} value={l.id}>[{l.tipe}] {l.nama} — {l.kota}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            {/* Info lokasi terpilih */}
+            {selLok&&(
+              <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',background:'var(--bg)',borderRadius:7,marginBottom:8,border:'1px solid var(--border)'}}>
+                <span style={{fontSize:18}}>{iconTipe(selLok.tipe)}</span>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:11,fontWeight:700,color:'var(--white)'}}>{selLok.nama}</div>
+                  <div style={{fontSize:9,color:'var(--muted)'}}>{selLok.kota} · <span style={{color:warnaTipe(selLok.tipe),fontWeight:700}}>{selLok.tipe}</span> · {selLok.ultg}</div>
+                </div>
+                <div style={{display:'flex',gap:6'}}>
+                  <select value={bulan} onChange={e=>setBulan(Number(e.target.value))} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:6,color:'var(--text)',padding:'4px 7px',fontSize:10,outline:'none',width:'auto'}}>
+                    {BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}
+                  </select>
+                  <select value={tahun} onChange={e=>setTahun(Number(e.target.value))} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:6,color:'var(--text)',padding:'4px 7px',fontSize:10,outline:'none',width:'auto'}}>
+                    {TAHUN_OPT.map(y=><option key={y}>{y}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+          </>
+        ):(
+          <div className="fld" style={{marginBottom:0}}>
+            <label>Tanggal Pencatatan</label>
+            <input type="date" value={umForm.tanggal} onChange={e=>setUF('tanggal',e.target.value)} style={{maxWidth:220}}/>
+          </div>
+        )}
+      </div>
+
+      {/* Organik */}
+      <div className="card">
+        <div className="card-title">🌿 Sampah Organik {tOrg>0&&<span style={{marginLeft:'auto',color:'var(--c-daun)',fontSize:11}}>{fmtKg(tOrg)}</span>}</div>
+        <div className="sec-strip ss-org" style={{fontSize:10}}>Masukkan volume & pilih metode pengelolaan per jenis</div>
+        <div className="g2" style={{marginBottom:8}}>
+          {JENIS_ORG.map(j=><JenisCard key={j.key} j={j}
+            form={mode==='lokasi'?lokForm:umForm}
+            setField={mode==='lokasi'?setLF:setUF}/>)}
+        </div>
+        {tOrg>0&&<div style={{display:'flex',justifyContent:'flex-end',padding:'5px 9px',background:'rgba(93,189,106,.06)',borderRadius:7,fontSize:10}}><span style={{color:'var(--muted)'}}>Sub-total:&nbsp;</span><strong style={{color:'var(--c-daun)'}}>{fmtKg(tOrg)}</strong></div>}
+        <div className="ib ib-g" style={{marginTop:8}}>🍃 <strong style={{color:'var(--c-daun)'}}>Daun</strong> — daun kering, ranting &nbsp;|&nbsp; 🍱 <strong style={{color:'var(--c-makan)'}}>Sisa Makanan</strong> — limbah dapur</div>
+      </div>
+
+      {/* Anorganik */}
+      <div className="card">
+        <div className="card-title">🧴 Sampah Anorganik {tAnorg>0&&<span style={{marginLeft:'auto',color:'var(--c-kertas)',fontSize:11}}>{fmtKg(tAnorg)}</span>}</div>
+        <div className="sec-strip ss-anorg" style={{fontSize:10}}>Masukkan volume & pilih metode pengelolaan per jenis</div>
+        <div className="g3" style={{marginBottom:8}}>
+          {JENIS_ANORG.map(j=><JenisCard key={j.key} j={j}
+            form={mode==='lokasi'?lokForm:umForm}
+            setField={mode==='lokasi'?setLF:setUF}/>)}
+        </div>
+        {tAnorg>0&&<div style={{display:'flex',justifyContent:'flex-end',padding:'5px 9px',background:'rgba(201,168,76,.06)',borderRadius:7,fontSize:10}}><span style={{color:'var(--muted)'}}>Sub-total:&nbsp;</span><strong style={{color:'var(--c-kertas)'}}>{fmtKg(tAnorg)}</strong></div>}
+        <div className="ib ib-a" style={{marginTop:8}}>📦 <strong style={{color:'var(--c-kertas)'}}>Kertas</strong> &nbsp;|&nbsp; 🧴 <strong style={{color:'var(--c-plastik)'}}>Plastik</strong> &nbsp;|&nbsp; 🔩 <strong style={{color:'var(--c-lain)'}}>Lain-lain</strong> (kaca, besi, logam)</div>
+      </div>
+
+      {/* Preview & submit */}
+      <div className="card">
+        <div className="card-title">📝 Simpan</div>
+        {mode==='umum'&&(
+          <div className="fld">
+            <label>Catatan (opsional)</label>
+            <textarea rows={2} placeholder="Kondisi khusus, event, dll..." value={umForm.keterangan} onChange={e=>setUF('keterangan',e.target.value)}/>
+          </div>
+        )}
+        {tAll>0&&(
+          <div className="pv-box">
+            <div className="pv-title">Pratinjau {mode==='lokasi'&&selLok?`— ${selLok.nama} · ${BULAN_FULL[bulan]} ${tahun}`:''}</div>
+            <div className="pv-grid">
+              {JENIS.filter(j=>vNum((mode==='lokasi'?lokForm:umForm)[j.key])>0).map(j=>(
+                <div key={j.key}>
+                  <div className="pv-lbl">{j.icon} {j.label}</div>
+                  <div className="pv-val" style={{color:j.color}}>{fmtKg((mode==='lokasi'?lokForm:umForm)[j.key])}</div>
+                </div>
+              ))}
+            </div>
+            <div className="pv-total">
+              <span>🌿 <strong style={{color:'var(--c-daun)'}}>{fmtKg(tOrg)}</strong></span>
+              <span>🧴 <strong style={{color:'var(--c-kertas)'}}>{fmtKg(tAnorg)}</strong></span>
+              <span>📦 Total: <strong style={{color:'var(--white)'}}>{fmtKg(tAll)}</strong></span>
+            </div>
+          </div>
+        )}
+        <div className="btn-row">
+          <button className="btn btn-p" onClick={mode==='lokasi'?saveLokasi:saveUmum}>✓ Simpan Data</button>
+          <button className="btn btn-s" onClick={()=>{setLokForm({});setUmForm(f=>({...f,daun:'',makan:'',kertas:'',plastik:'',lain:'',keterangan:''}));}}>✕ Reset</button>
+        </div>
+      </div>
+    </>
+  );
 }
 
+// PAGE DATA
 function PageData({records,onDelete}){
-  const [b,setB]=useState(TODAY.getMonth());const [y,setY]=useState(TODAY.getFullYear());
+  const [b,setB]=useState(TODAY.getMonth());const[y,setY]=useState(TODAY.getFullYear());
   const f=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===b&&d.getFullYear()===y;}).sort((a,x)=>a.tanggal.localeCompare(x.tanggal));
   const t={};JENIS.forEach(j=>{t[j.key]=f.reduce((s,r)=>s+vNum(r[j.key]),0);});
   const tO=JENIS_ORG.reduce((s,j)=>s+t[j.key],0),tA=JENIS_ANORG.reduce((s,j)=>s+t[j.key],0);
   return(<><MonthSel bulan={b} setBulan={setB} tahun={y} setTahun={setY}/>
-    <div className="card">{f.length===0?(<div className="empty"><div className="empty-ic">📭</div><div style={{fontSize:13}}>Belum ada data</div></div>):(<div className="tw"><table><thead><tr><th rowSpan={2}>Tanggal</th>{JENIS_ORG.map(j=><th key={j.key} style={{color:j.color}} colSpan={2}>{j.icon}{j.label}</th>)}<th rowSpan={2} style={{color:'var(--c-daun)'}}>Org.</th>{JENIS_ANORG.map(j=><th key={j.key} style={{color:j.color}} colSpan={2}>{j.icon}{j.label}</th>)}<th rowSpan={2} style={{color:'var(--c-kertas)'}}>Anorg.</th><th rowSpan={2}>Total</th><th rowSpan={2}></th></tr><tr>{JENIS_ORG.map(j=><React.Fragment key={j.key}><th style={{fontSize:8}}>kg</th><th style={{fontSize:8}}>Kelola</th></React.Fragment>)}{JENIS_ANORG.map(j=><React.Fragment key={j.key}><th style={{fontSize:8}}>kg</th><th style={{fontSize:8}}>Kelola</th></React.Fragment>)}</tr></thead><tbody>{f.map(r=>{const o=sumGrup(r,'organik'),a=sumGrup(r,'anorganik');return(<tr key={r.id}><td style={{fontWeight:600,color:'var(--white)',whiteSpace:'nowrap'}}>{new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'})}</td>{JENIS_ORG.map(j=><React.Fragment key={j.key}><td style={{color:j.color}}>{fmt(r[j.key])}</td><td><Pill p={r[penKey(j.key)]||'Komposting'}/></td></React.Fragment>)}<td style={{fontWeight:700,color:'var(--c-daun)'}}>{fmt(o)}</td>{JENIS_ANORG.map(j=><React.Fragment key={j.key}><td style={{color:j.color}}>{fmt(r[j.key])}</td><td><Pill p={r[penKey(j.key)]||'Komposting'}/></td></React.Fragment>)}<td style={{fontWeight:700,color:'var(--c-kertas)'}}>{fmt(a)}</td><td style={{fontWeight:700,color:'var(--white)'}}>{fmt(o+a)}</td><td><button className="btn btn-d" onClick={()=>onDelete(r.id)}>✕</button></td></tr>);})}</tbody><tfoot><tr className="tf"><td>TOTAL</td>{JENIS_ORG.map(j=><React.Fragment key={j.key}><td style={{color:j.color}}>{fmt(t[j.key])}</td><td/></React.Fragment>)}<td style={{color:'var(--c-daun)'}}>{fmt(tO)}</td>{JENIS_ANORG.map(j=><React.Fragment key={j.key}><td style={{color:j.color}}>{fmt(t[j.key])}</td><td/></React.Fragment>)}<td style={{color:'var(--c-kertas)'}}>{fmt(tA)}</td><td style={{color:'var(--white)'}}>{fmt(tO+tA)}</td><td/></tr></tfoot></table></div>)}</div></>);
+    <div className="card">{f.length===0?(<div className="empty"><div className="empty-ic">📭</div><div>Belum ada data</div></div>):(<div className="tw">
+      <table><thead><tr>
+        <th>Tgl</th><th>Lokasi</th>
+        {JENIS_ORG.map(j=><th key={j.key} style={{color:j.color}} colSpan={2}>{j.icon}</th>)}
+        <th style={{color:'var(--c-daun)'}}>Org.</th>
+        {JENIS_ANORG.map(j=><th key={j.key} style={{color:j.color}} colSpan={2}>{j.icon}</th>)}
+        <th style={{color:'var(--c-kertas)'}}>Anorg.</th><th>Total</th><th></th>
+      </tr><tr>
+        <th colSpan={2}></th>
+        {JENIS_ORG.map(j=><React.Fragment key={j.key}><th style={{fontSize:8,color:j.color}}>kg</th><th style={{fontSize:7}}>Klola</th></React.Fragment>)}
+        <th/>
+        {JENIS_ANORG.map(j=><React.Fragment key={j.key}><th style={{fontSize:8,color:j.color}}>kg</th><th style={{fontSize:7}}>Klola</th></React.Fragment>)}
+        <th/><th/><th/>
+      </tr></thead>
+      <tbody>{f.map(r=>{const o=sumGrup(r,'organik'),a=sumGrup(r,'anorganik');return(<tr key={r.id}>
+        <td style={{fontWeight:600,color:'var(--white)',whiteSpace:'nowrap'}}>{new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'2-digit'})}</td>
+        <td style={{maxWidth:120,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:10,color:'var(--muted)'}}>{r.lokasiNama||'Umum'}</td>
+        {JENIS_ORG.map(j=><React.Fragment key={j.key}><td style={{color:j.color}}>{fmt(r[j.key])}</td><td><Pill p={r[penKey(j.key)]||'Komposting'}/></td></React.Fragment>)}
+        <td style={{fontWeight:700,color:'var(--c-daun)'}}>{fmt(o)}</td>
+        {JENIS_ANORG.map(j=><React.Fragment key={j.key}><td style={{color:j.color}}>{fmt(r[j.key])}</td><td><Pill p={r[penKey(j.key)]||'Komposting'}/></td></React.Fragment>)}
+        <td style={{fontWeight:700,color:'var(--c-kertas)'}}>{fmt(a)}</td>
+        <td style={{fontWeight:700,color:'var(--white)'}}>{fmt(o+a)}</td>
+        <td><button className="btn btn-d" onClick={()=>onDelete(r.id)}>✕</button></td>
+      </tr>);})}</tbody>
+      <tfoot><tr className="tf"><td colSpan={2}>TOTAL</td>
+        {JENIS_ORG.map(j=><React.Fragment key={j.key}><td style={{color:j.color}}>{fmt(t[j.key])}</td><td/></React.Fragment>)}
+        <td style={{color:'var(--c-daun)'}}>{fmt(tO)}</td>
+        {JENIS_ANORG.map(j=><React.Fragment key={j.key}><td style={{color:j.color}}>{fmt(t[j.key])}</td><td/></React.Fragment>)}
+        <td style={{color:'var(--c-kertas)'}}>{fmt(tA)}</td><td style={{color:'var(--white)'}}>{fmt(tO+tA)}</td><td/>
+      </tr></tfoot></table>
+    </div>)}</div></>);
 }
 
+// PAGE LAPORAN
 function PageLaporan({records}){
-  const [b,setB]=useState(TODAY.getMonth());const [y,setY]=useState(TODAY.getFullYear());
+  const [b,setB]=useState(TODAY.getMonth());const[y,setY]=useState(TODAY.getFullYear());
   const f=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===b&&d.getFullYear()===y;});
   const tJ={};JENIS.forEach(j=>{tJ[j.key]=f.reduce((s,r)=>s+vNum(r[j.key]),0);});
   const tO=JENIS_ORG.reduce((s,j)=>s+tJ[j.key],0),tA=JENIS_ANORG.reduce((s,j)=>s+tJ[j.key],0),tot=tO+tA,avg=f.length?tot/f.length:0;
@@ -807,34 +941,36 @@ function PageLaporan({records}){
     <div className="g5"><St label="Total Sampah" value={fmt(tot)} unit="kg" color="var(--g1)"/><St label="Rata-rata/Hari" value={fmt(avg)} unit="kg" color="var(--g2)"/><St label="Hari Catat" value={f.length} unit="hari" color="#5aa8d6"/><St label="Organik" value={fmt(tO)} unit="kg" color="var(--c-makan)"/><St label="Ke TPA" value={fmt(bP.TPA)} unit="kg" color="var(--g3)"/></div>
     <div className="g2"><div className="card"><div className="sec-lbl">🌿 Organik</div>{JENIS_ORG.map(j=><Pr key={j.key} label={j.label} val={tJ[j.key]} total={tO} color={j.color} icon={j.icon}/>)}</div><div className="card"><div className="sec-lbl">🧴 Anorganik</div>{JENIS_ANORG.map(j=><Pr key={j.key} label={j.label} val={tJ[j.key]} total={tA} color={j.color} icon={j.icon}/>)}</div></div>
     <div className="g2"><div className="card"><div className="sec-lbl">Komposisi</div><Pr label="Organik" val={tO} total={tot} color="var(--g1)" icon="🌿"/><Pr label="Anorganik" val={tA} total={tot} color="var(--g2)" icon="🧴"/></div><div className="card"><div className="sec-lbl">Pengelolaan</div><Pr label="Komposting" val={bP.Komposting} total={tot} color="var(--g1)" icon="♻"/><Pr label="Bank Sampah" val={bP['Bank Sampah']} total={tot} color="#5aa8d6" icon="🏦"/><Pr label="TPA" val={bP.TPA} total={tot} color="var(--g3)" icon="🗑"/></div></div>
-    {l7.length>0&&(<div className="card"><div className="sec-lbl">Tren 7 Entri Terakhir</div><div style={{display:'flex',alignItems:'flex-end',gap:4,height:80,paddingTop:7}}>{l7.map((r,i)=>{const o=sumGrup(r,'organik'),a=sumGrup(r,'anorganik'),t=o+a;const ho=Math.max((o/mB)*62,2);const ha=Math.max((a/mB)*62,2);return(<div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}><span style={{fontSize:8,color:'var(--muted)'}}>{fmt(t)}</span><div style={{display:'flex',flexDirection:'column',justifyContent:'flex-end',height:62,gap:1,width:'100%'}}><div style={{width:'100%',height:ho,background:'var(--g1)',borderRadius:'2px 2px 0 0'}}/><div style={{width:'100%',height:ha,background:'var(--g2)',borderRadius:'2px 2px 0 0'}}/></div><span style={{fontSize:7,color:'var(--muted)'}}>{new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}</span></div>);})}</div></div>)}</>);
+    {l7.length>0&&(<div className="card"><div className="sec-lbl">Tren 7 Terakhir</div><div style={{display:'flex',alignItems:'flex-end',gap:4,height:75,paddingTop:6}}>{l7.map((r,i)=>{const o=sumGrup(r,'organik'),a=sumGrup(r,'anorganik'),t=o+a;return(<div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}><span style={{fontSize:7,color:'var(--muted)'}}>{fmt(t)}</span><div style={{display:'flex',flexDirection:'column',justifyContent:'flex-end',height:56,gap:1,width:'100%'}}><div style={{height:Math.max((o/mB)*56,2),background:'var(--g1)',borderRadius:'2px 2px 0 0',width:'100%'}}/><div style={{height:Math.max((a/mB)*56,2),background:'var(--g2)',borderRadius:'2px 2px 0 0',width:'100%'}}/></div><span style={{fontSize:6,color:'var(--muted)'}}>{new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}</span></div>);})}</div></div>)}</>);
 }
 
+// PAGE AI
 function PageAI({records}){
   const ai=useMemo(()=>runAI(records),[records]);
-  if(!ai)return(<div className="card card-ai"><div style={{textAlign:'center',padding:'36px 16px'}}><div style={{fontSize:40,marginBottom:12}}>🤖</div><div style={{fontFamily:'Syne,sans-serif',fontSize:16,fontWeight:700,color:'var(--white)',marginBottom:6}}>Modul AI Belum Aktif</div><div style={{color:'var(--muted)',fontSize:12}}>Input data harian minimal 1 bulan terlebih dahulu.</div></div></div>);
-  const {keys,months,n,pT,pO,pA,tren,trenPct,skor,tpa,komp,bank,lastM,predLabel}=ai;
+  if(!ai)return(<div className="card card-ai"><div style={{textAlign:'center',padding:'32px 14px'}}><div style={{fontSize:36,marginBottom:10}}>🤖</div><div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'var(--white)',marginBottom:5}}>Modul AI Belum Aktif</div><div style={{color:'var(--muted)',fontSize:11}}>Input data harian minimal 1 bulan.</div></div></div>);
+  const {keys,months,n,pT,pO,pA,tren,trenPct,skor,tpa,lastM,predLabel,reko}=ai;
   const tL=tren==='up'?`↑ +${Math.abs(trenPct).toFixed(1)}%`:tren==='down'?`↓ -${Math.abs(trenPct).toFixed(1)}%`:'→ Stabil';
   const tC=tren==='up'?'tren-up':tren==='down'?'tren-dn':'tren-flat';
   const rc=l=>l==='high'?'reko-high':l==='med'?'reko-med':l==='low'?'reko-low':'reko-info';
   const mx=Math.max(...months.map(m=>m.total),1);
   return(<>
-    <div className="card card-ai"><div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}><div style={{fontSize:30}}>🤖</div><div style={{flex:1}}><div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}><h2 style={{fontSize:15,fontWeight:800,color:'var(--white)'}}>AI Analisis & Prediksi</h2><span className="ai-badge"><span className="ai-dot"/>Aktif</span></div><div style={{fontSize:11,color:'var(--muted)'}}><strong style={{color:'#b8aff9'}}>{records.length} entri</strong> · <strong style={{color:'#b8aff9'}}>{n} bulan</strong></div></div><div style={{textAlign:'center'}}><div style={{fontSize:9,color:'var(--muted)',fontWeight:700,letterSpacing:1,textTransform:'uppercase',marginBottom:5}}>Skor Kinerja</div><SkorRing skor={skor}/></div></div></div>
-    {n>=2&&(<div className="card"><div className="card-title">📈 Tren Bulanan <span className={`tren-badge ${tC}`} style={{marginLeft:'auto'}}>{tL}</span></div><div style={{display:'flex',alignItems:'flex-end',gap:3,height:80,paddingTop:6}}>{months.map((m,i)=>{const ho=Math.max((m.org/mx)*64,2),ha=Math.max((m.anorg/mx)*64,2);const[yr,mo]=keys[i].split('-');return(<div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}><span style={{fontSize:7,color:'var(--muted)'}}>{Math.round(m.total)}</span><div style={{display:'flex',flexDirection:'column',justifyContent:'flex-end',height:64,gap:1,width:'100%'}}><div style={{height:ho,background:'var(--g1)',borderRadius:'2px 2px 0 0',width:'100%'}}/><div style={{height:ha,background:'var(--g2)',borderRadius:'2px 2px 0 0',width:'100%'}}/></div><span style={{fontSize:7,color:'var(--muted)',textAlign:'center'}}>{BULAN_SHORT[Number(mo)-1]}<br/>{yr}</span></div>);})}</div></div>)}
-    <div className="card card-ai"><div className="card-title">🔮 Prediksi — {predLabel}</div><div className="g3">{[{icon:'📦',t:'Total',v:pT},{icon:'🌿',t:'Organik',v:pO},{icon:'🧴',t:'Anorganik',v:pA}].map(x=>(<div key={x.t} className="pred-card"><div className="pred-header"><span className="pred-icon" style={{fontSize:18}}>{x.icon}</span><div><div className="pred-title">{x.t}</div></div></div><div><span className="pred-val">{fmt(x.v)}</span><span className="pred-unit">kg</span></div></div>))}</div></div>
-    <div className="card"><div className="card-title">💡 Rekomendasi</div>{ai.reko.map((r,i)=>(<div key={i} className={`reko-item ${rc(r.level)}`}><span className="reko-icon">{r.icon}</span><div><div className="reko-title">{r.title}</div><div className="reko-desc">{r.desc}</div></div></div>))}</div>
-    <div className="card"><div className="card-title">🏆 Skor Kinerja</div><div style={{display:'flex',gap:16,alignItems:'center',flexWrap:'wrap',marginBottom:14}}><SkorRing skor={skor}/><div style={{flex:1,fontSize:11,color:'var(--muted)',lineHeight:1.8}}>TPA: <strong style={{color:tpa>0.3?'var(--g3)':'var(--g1)'}}>{(tpa*100).toFixed(1)}%</strong> (target &lt;30%)</div></div><Pr label="Komposting" val={lastM.byPen.Komposting} total={lastM.total} color="var(--g1)" icon="♻"/><Pr label="Bank Sampah" val={lastM.byPen['Bank Sampah']} total={lastM.total} color="#5aa8d6" icon="🏦"/><Pr label="TPA" val={lastM.byPen.TPA} total={lastM.total} color="var(--g3)" icon="🗑"/></div>
+    <div className="card card-ai"><div style={{display:'flex',alignItems:'center',gap:11,flexWrap:'wrap'}}><div style={{fontSize:28}}>🤖</div><div style={{flex:1}}><div style={{display:'flex',alignItems:'center',gap:7,marginBottom:2}}><h2 style={{fontSize:13,fontWeight:800,color:'var(--white)'}}>AI Analisis & Prediksi</h2><span className="ai-badge"><span className="ai-dot"/>Aktif</span></div><div style={{fontSize:10,color:'var(--muted)'}}><strong style={{color:'#b8aff9'}}>{records.length} entri</strong> · <strong style={{color:'#b8aff9'}}>{n} bulan</strong></div></div><div style={{textAlign:'center'}}><div style={{fontSize:8,color:'var(--muted)',fontWeight:700,letterSpacing:1,textTransform:'uppercase',marginBottom:4}}>Skor Kinerja</div><SkorRing skor={skor}/></div></div></div>
+    {n>=2&&(<div className="card"><div className="card-title">📈 Tren Bulanan <span className={`tren-badge ${tC}`} style={{marginLeft:'auto'}}>{tL}</span></div><div style={{display:'flex',alignItems:'flex-end',gap:3,height:75,paddingTop:5}}>{months.map((m,i)=>{const ho=Math.max((m.org/mx)*60,2),ha=Math.max((m.anorg/mx)*60,2);const[yr,mo]=keys[i].split('-');return(<div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}><span style={{fontSize:7,color:'var(--muted)'}}>{Math.round(m.total)}</span><div style={{display:'flex',flexDirection:'column',justifyContent:'flex-end',height:60,gap:1,width:'100%'}}><div style={{height:ho,background:'var(--g1)',borderRadius:'2px 2px 0 0',width:'100%'}}/><div style={{height:ha,background:'var(--g2)',borderRadius:'2px 2px 0 0',width:'100%'}}/></div><span style={{fontSize:6,color:'var(--muted)',textAlign:'center'}}>{BULAN_SHORT[Number(mo)-1]}<br/>{yr}</span></div>);})}</div></div>)}
+    <div className="card card-ai"><div className="card-title">🔮 Prediksi — {predLabel}</div><div className="g3">{[{icon:'📦',t:'Total',v:pT},{icon:'🌿',t:'Organik',v:pO},{icon:'🧴',t:'Anorganik',v:pA}].map(x=>(<div key={x.t} className="pred-card"><div className="pred-header"><span style={{fontSize:16}}>{x.icon}</span><div><div className="pred-title">{x.t}</div></div></div><div><span className="pred-val">{fmt(x.v)}</span><span className="pred-note"> kg</span></div></div>))}</div></div>
+    <div className="card"><div className="card-title">💡 Rekomendasi</div>{reko.map((r,i)=>(<div key={i} className={`reko-item ${rc(r.level)}`}><span className="reko-icon">{r.icon}</span><div><div className="reko-title">{r.title}</div><div className="reko-desc">{r.desc}</div></div></div>))}</div>
+    <div className="card"><div className="card-title">🏆 Skor Kinerja</div><div style={{display:'flex',gap:14,alignItems:'center',flexWrap:'wrap',marginBottom:12}}><SkorRing skor={skor}/><div style={{flex:1,fontSize:10,color:'var(--muted)',lineHeight:1.8}}>TPA saat ini: <strong style={{color:tpa>0.3?'var(--g3)':'var(--g1)'}}>{(tpa*100).toFixed(1)}%</strong><br/>Target: &lt;30%</div></div><Pr label="Komposting" val={lastM.byPen.Komposting} total={lastM.total} color="var(--g1)" icon="♻"/><Pr label="Bank Sampah" val={lastM.byPen['Bank Sampah']} total={lastM.total} color="#5aa8d6" icon="🏦"/><Pr label="TPA" val={lastM.byPen.TPA} total={lastM.total} color="var(--g3)" icon="🗑"/></div>
   </>);
 }
 
+// PAGE EKSPOR
 function PageEkspor({records,showToast}){
-  const [b,setB]=useState(TODAY.getMonth());const [y,setY]=useState(TODAY.getFullYear());
+  const [b,setB]=useState(TODAY.getMonth());const[y,setY]=useState(TODAY.getFullYear());
   const f=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===b&&d.getFullYear()===y;});
   const tot=f.reduce((s,r)=>s+sumAll(r),0);
   return(<><MonthSel bulan={b} setBulan={setB} tahun={y} setTahun={setY}/>
-    <div className="card" style={{borderColor:'rgba(93,189,106,.3)'}}><div style={{display:'flex',gap:12,alignItems:'center',marginBottom:14}}><span style={{fontSize:26}}>📊</span><div><div className="card-title" style={{marginBottom:1}}>Ekspor — {BULAN_FULL[b]} {y}</div><div style={{fontSize:11,color:'var(--muted)'}}>{f.length} entri · {fmtKg(tot)}</div></div></div>
-      {[{icon:'📋',name:'Sheet 1: Data Harian',desc:'Semua entri per jenis + pengelolaan'},{icon:'📄',name:'Sheet 2: Laporan Bulanan',desc:'Laporan formal siap cetak & arsip'}].map(x=>(<div key={x.name} className="sl"><span>{x.icon}</span><div><div className="sl-nm">{x.name}</div><div className="sl-ds">{x.desc}</div></div></div>))}
-      {f.length===0?<div className="ib ib-r">⚠ Tidak ada data.</div>:<button className="btn btn-p" style={{fontSize:13,padding:'9px 20px'}} onClick={()=>{try{exportExcel(records,b,y);showToast('✅ Excel berhasil diunduh!');}catch(e){showToast('⚠️ '+e.message);}}}>⬇ Unduh Excel (.xlsx)</button>}
+    <div className="card" style={{borderColor:'rgba(93,189,106,.3)'}}><div style={{display:'flex',gap:11,alignItems:'center',marginBottom:12}}><span style={{fontSize:24}}>📊</span><div><div className="card-title" style={{marginBottom:1}}>Ekspor — {BULAN_FULL[b]} {y}</div><div style={{fontSize:10,color:'var(--muted)'}}>{f.length} entri · {fmtKg(tot)}</div></div></div>
+      {[{icon:'📋',name:'Sheet 1: Data Harian',desc:'Tanggal, Lokasi, ULTG, per jenis + pengelolaan + total'},{icon:'📄',name:'Sheet 2: Laporan',desc:'Laporan bulanan siap cetak'}].map(x=>(<div key={x.name} style={{display:'flex',gap:9,marginBottom:8}}><span>{x.icon}</span><div><div style={{fontSize:11,fontWeight:600,color:'var(--white)'}}>{x.name}</div><div style={{fontSize:9,color:'var(--muted)'}}>{x.desc}</div></div></div>))}
+      {f.length===0?<div className="ib ib-r">⚠ Tidak ada data.</div>:<button className="btn btn-p" style={{fontSize:12,padding:'8px 18px'}} onClick={()=>{try{exportExcel(records,b,y);showToast('✅ Excel berhasil diunduh!');}catch(e){showToast('⚠️ '+e.message);}}}>⬇ Unduh Excel (.xlsx)</button>}
     </div></>);
 }
 
@@ -842,83 +978,102 @@ function PageEkspor({records,showToast}){
 // APP ROOT
 // ══════════════════════════════════════════════════════════════
 const NAV=[
-  {id:'peta',    icon:'🗺',  label:'Peta GI & ULTG',   peta:true},
+  {id:'peta',    icon:'🗺',  label:'Dashboard Peta',   peta:true},
   {id:'input',   icon:'📥',  label:'Input Harian'},
   {id:'data',    icon:'📋',  label:'Data Tersimpan'},
   {id:'laporan', icon:'📊',  label:'Laporan Bulanan'},
-  {id:'ai',      icon:'🤖',  label:'AI & Prediksi',    ai:true},
+  {id:'ai',      icon:'🤖',  label:'AI & Prediksi',   ai:true},
   {id:'ekspor',  icon:'📤',  label:'Ekspor Excel'},
 ];
 const PAGE_TITLE={
-  peta:'🗺 Peta GI & ULTG — UPT PLN Palembang',
+  peta:'Dashboard — Sampah Pintar PLN UPT Palembang',
   input:'📥 Input Timbulan Harian',
   data:'📋 Data Tersimpan',
   laporan:'📊 Laporan Bulanan',
   ai:'🤖 AI Analisis & Prediksi',
   ekspor:'📤 Ekspor Spreadsheet',
 };
-const EMPTY_FORM=()=>({
-  tanggal:TODAY.toISOString().split('T')[0],
-  daun:'',makan:'',kertas:'',plastik:'',lain:'',
-  pen_daun:'Komposting',pen_makan:'Komposting',
-  pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',
-  keterangan:'',
-});
 
 function App(){
   const [page,setPage]=useState('peta');
   const [records,setRecords]=useState([]);
   const [sampahLokasi,setSampahLokasi]=useState(SAMPAH_AWAL);
   const [toast,setToast]=useState(null);
-  const [form,setForm]=useState(EMPTY_FORM());
+  const [filterULTG,setFilterULTG]=useState('Semua');
+  const [selectedId,setSelectedId]=useState(null);
+  const [modalLok,setModalLok]=useState(null);
 
   const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),2800);};
-  const setField=(k,v)=>setForm(f=>({...f,[k]:v}));
-  const onSubmit=()=>{
-    if(!form.tanggal){showToast('⚠️ Pilih tanggal');return;}
-    if(sumAll(form)===0){showToast('⚠️ Isi minimal satu jenis');return;}
-    setRecords(r=>[...r,{...form,id:Date.now()}]);
-    setForm({...EMPTY_FORM(),tanggal:form.tanggal});
-    showToast('✅ Data berhasil disimpan!');
-  };
-  const onReset=()=>setForm({...EMPTY_FORM(),tanggal:form.tanggal});
   const onDelete=id=>{setRecords(r=>r.filter(x=>x.id!==id));showToast('🗑 Data dihapus');};
+  const onFlyTo=(lok)=>{setPage('peta');setSelectedId(lok.id);};
+  const openInput=(lok)=>setModalLok(lok);
+
   const isPeta=page==='peta';
 
   return(
     <>
-      <div className="sidebar">
+      {/* KOLOM 1: Navigasi */}
+      <div className="nav-sidebar">
         <div className="sb-logo">
           <h2>♻ SampahPintar</h2>
-          <div className="sub1">UPT PLN Palembang</div>
-          <div className="sub2">Waste Management System</div>
+          <div className="org">UPT PLN Palembang</div>
+          <div className="sub">Waste Management System</div>
         </div>
-        <div className="nav-section">Menu</div>
+        <div className="nav-sec">Menu Utama</div>
         {NAV.map(n=>(
-          <div key={n.id} className={`nav-item${page===n.id?' active':''}${n.ai?' nav-ai':''}${n.peta?' nav-peta':''}`} onClick={()=>setPage(n.id)}>
-            <span style={{fontSize:15}}>{n.icon}</span>{n.label}
-            {n.ai&&<span style={{marginLeft:'auto',width:6,height:6,borderRadius:'50%',background:'var(--ai)',animation:'pulse 1.5s infinite',flexShrink:0}}/>}
-            {n.peta&&<span style={{marginLeft:'auto',width:6,height:6,borderRadius:'50%',background:'var(--pln)',animation:'pulse 1.5s infinite',flexShrink:0}}/>}
+          <div key={n.id}
+            className={`nav-item${page===n.id?' active':''}${n.ai?' nav-ai':''}`}
+            onClick={()=>setPage(n.id)}>
+            <span style={{fontSize:14}}>{n.icon}</span>{n.label}
+            {n.ai&&<span style={{marginLeft:'auto',width:5,height:5,borderRadius:'50%',background:'var(--ai)',animation:'pulse 1.5s infinite',flexShrink:0}}/>}
+            {n.peta&&<span style={{marginLeft:'auto',width:5,height:5,borderRadius:'50%',background:'var(--pln)',animation:'pulse 1.5s infinite',flexShrink:0}}/>}
           </div>
         ))}
-        <div className="sb-foot">
-          <div className="lbl">Total lokasi terdaftar</div>
-          <div className="cnt">{DATA_LOKASI.length}<span style={{fontSize:11}}> lokasi</span></div>
-          <div style={{fontSize:10,color:'var(--muted)',marginTop:4}}>
-            {DATA_LOKASI.filter(l=>l.tipe==='ULTG').length} ULTG · {DATA_LOKASI.filter(l=>l.tipe!=='ULTG'&&l.tipe!=='KANTOR').length} GI/GIS/GITET
-          </div>
+        <div className="sb-stats">
+          {[
+            {l:'Total Lokasi',v:`${DATA_LOKASI.length}`,c:'var(--white)'},
+            {l:'ULTG',v:'4',c:'var(--ultg)'},
+            {l:'GI / GIS / GITET',v:`${DATA_LOKASI.filter(l=>l.tipe!=='ULTG'&&l.tipe!=='KANTOR').length}`,c:'var(--pln)'},
+            {l:'Data Terinput',v:records.length,c:'var(--g1)'},
+          ].map(x=>(
+            <div key={x.l} className="row">
+              <span style={{color:'var(--muted)'}}>{x.l}</span>
+              <span className="val" style={{color:x.c}}>{x.v}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      <div className="main">
+      {/* KOLOM 2: Map sidebar (peta + filter ULTG) */}
+      <MapSidebar
+        sampahLokasi={sampahLokasi}
+        filterULTG={filterULTG}
+        setFilterULTG={setFilterULTG}
+        selectedId={selectedId}
+        setSelectedId={setSelectedId}
+        onFlyTo={onFlyTo}
+        onInputClick={openInput}
+      />
+
+      {/* KOLOM 3: Konten utama */}
+      <div className="main-area">
         <div className="topbar">
           <h1>{PAGE_TITLE[page]}</h1>
           <span className="dt">{TODAY.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</span>
         </div>
+
         {isPeta
-          ?<PagePeta sampahLokasi={sampahLokasi} setSampahLokasi={setSampahLokasi} showToast={showToast}/>
+          ?<PagePeta
+              sampahLokasi={sampahLokasi}
+              setSampahLokasi={setSampahLokasi}
+              showToast={showToast}
+              filterULTG={filterULTG}
+              selectedId={selectedId}
+              setSelectedId={setSelectedId}
+              onInputClick={openInput}
+            />
           :<div className="content">
-            {page==='input'   &&<PageInput   form={form} setField={setField} onSubmit={onSubmit} onReset={onReset} sampahLokasi={sampahLokasi} setSampahLokasi={setSampahLokasi} showToast={showToast}/>}
+            {page==='input'   &&<PageInput records={records} setRecords={setRecords} sampahLokasi={sampahLokasi} setSampahLokasi={setSampahLokasi} showToast={showToast}/>}
             {page==='data'    &&<PageData    records={records} onDelete={onDelete}/>}
             {page==='laporan' &&<PageLaporan records={records}/>}
             {page==='ai'      &&<PageAI      records={records}/>}
@@ -926,6 +1081,18 @@ function App(){
           </div>
         }
       </div>
+
+      {/* Modal input per lokasi */}
+      {modalLok&&(
+        <ModalInput
+          lok={modalLok}
+          sampahLokasi={sampahLokasi}
+          setSampahLokasi={setSampahLokasi}
+          showToast={showToast}
+          onClose={()=>setModalLok(null)}
+        />
+      )}
+
       <Toast msg={toast}/>
     </>
   );

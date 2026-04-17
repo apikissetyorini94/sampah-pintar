@@ -2,8 +2,11 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
+<meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="pragma" content="no-cache"/>
+<meta http-equiv="expires" content="0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SampahPintar ♻ — UPT PLN Palembang</title>
+<title>SampahPintar ♻ — UPT PLN Palembang v3</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -707,19 +710,12 @@ function ModalInput({lok,sampahLokasi,setSampahLokasi,showToast,onClose}){
 }
 
 // ══════════════════════════════════════════════════════════════
-// PAGE: INPUT HARIAN (dengan dropdown lokasi)
+// PAGE: INPUT HARIAN — 1 form dengan dropdown lokasi
 // ══════════════════════════════════════════════════════════════
 function PageInput({records,setRecords,sampahLokasi,setSampahLokasi,showToast}){
-  // Mode: 'lokasi' = input per lokasi, 'umum' = input harian umum
-  const [mode,setMode]=useState('lokasi');
-  const [lokId,setLokId]=useState(DATA_LOKASI[0].id);
-  const [bulan,setBulan]=useState(TODAY.getMonth());
-  const [tahun,setTahun]=useState(TODAY.getFullYear());
-  const [lokForm,setLokForm]=useState({});
-
-  // Form umum
-  const [umForm,setUmForm]=useState({
-    tanggal:TODAY.toISOString().split('T')[0],
+  const [lokId,  setLokId ]=useState(DATA_LOKASI[0].id);
+  const [tanggal,setTanggal]=useState(TODAY.toISOString().split('T')[0]);
+  const [form,   setForm  ]=useState({
     daun:'',makan:'',kertas:'',plastik:'',lain:'',
     pen_daun:'Komposting',pen_makan:'Komposting',
     pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',
@@ -727,148 +723,124 @@ function PageInput({records,setRecords,sampahLokasi,setSampahLokasi,showToast}){
   });
 
   const selLok=DATA_LOKASI.find(l=>l.id===lokId);
-  const setLF=(k,v)=>setLokForm(f=>({...f,[k]:v}));
-  const setUF=(k,v)=>setUmForm(f=>({...f,[k]:v}));
+  const setF=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const tOrg=sumGrup(form,'organik');
+  const tAnorg=sumGrup(form,'anorganik');
+  const tAll=tOrg+tAnorg;
 
-  // Saat ganti lokasi/bulan, load data existing
-  useEffect(()=>{
-    const d=sampahLokasi[lokId]||[];
-    const found=d.find(e=>e.bulan===bulan&&e.tahun===tahun)||{};
-    setLokForm({...found});
-  },[lokId,bulan,tahun]);
-
-  function saveLokasi(){
-    if(sumAll(lokForm)===0){showToast('⚠️ Isi minimal satu jenis sampah');return;}
-    const entry={...lokForm,bulan,tahun,
-      pen_daun:lokForm.pen_daun||'Komposting',pen_makan:lokForm.pen_makan||'Komposting',
-      pen_kertas:lokForm.pen_kertas||'Bank Sampah',pen_plastik:lokForm.pen_plastik||'Bank Sampah',pen_lain:lokForm.pen_lain||'TPA',
+  function save(){
+    if(!tanggal){showToast('⚠️ Pilih tanggal');return;}
+    if(tAll===0){showToast('⚠️ Isi minimal satu jenis sampah');return;}
+    const entry={
+      ...form,
+      id:Date.now(),
+      tanggal,
+      lokasiId:lokId,
+      lokasiNama:selLok?.nama||'-',
+      lokasiULTG:selLok?.ultg||'-',
+      lokTipe:selLok?.tipe||'-',
+    };
+    setRecords(r=>[...r,entry]);
+    // Simpan juga ke data lokasi untuk peta
+    const bulanTgl=new Date(tanggal).getMonth();
+    const tahunTgl=new Date(tanggal).getFullYear();
+    const entryLok={...form,bulan:bulanTgl,tahun:tahunTgl,
+      pen_daun:form.pen_daun||'Komposting',pen_makan:form.pen_makan||'Komposting',
+      pen_kertas:form.pen_kertas||'Bank Sampah',pen_plastik:form.pen_plastik||'Bank Sampah',pen_lain:form.pen_lain||'TPA',
     };
     setSampahLokasi(prev=>{
       const arr=[...(prev[lokId]||[])];
-      const idx=arr.findIndex(e=>e.bulan===entry.bulan&&e.tahun===entry.tahun);
-      if(idx>=0)arr[idx]=entry;else arr.push(entry);
+      const idx=arr.findIndex(e=>e.bulan===bulanTgl&&e.tahun===tahunTgl);
+      if(idx>=0)arr[idx]=entryLok;else arr.push(entryLok);
       arr.sort((a,b)=>a.tahun!==b.tahun?a.tahun-b.tahun:a.bulan-b.bulan);
       return{...prev,[lokId]:arr};
     });
-    // Juga simpan ke records untuk laporan global
-    setRecords(r=>[...r,{...entry,id:Date.now(),tanggal:`${tahun}-${String(bulan+1).padStart(2,'0')}-01`,lokasiId:lokId,lokasiNama:selLok?.nama,lokasiULTG:selLok?.ultg}]);
-    setLokForm({});
+    setForm({daun:'',makan:'',kertas:'',plastik:'',lain:'',
+      pen_daun:'Komposting',pen_makan:'Komposting',
+      pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',keterangan:''});
     showToast(`✅ Data ${selLok?.nama} berhasil disimpan!`);
   }
 
-  function saveUmum(){
-    if(!umForm.tanggal){showToast('⚠️ Pilih tanggal');return;}
-    if(sumAll(umForm)===0){showToast('⚠️ Isi minimal satu jenis');return;}
-    setRecords(r=>[...r,{...umForm,id:Date.now()}]);
-    setUmForm(f=>({...f,daun:'',makan:'',kertas:'',plastik:'',lain:'',keterangan:''}));
-    showToast('✅ Data berhasil disimpan!');
-  }
-
-  const tOrg=sumGrup(mode==='lokasi'?lokForm:umForm,'organik');
-  const tAnorg=sumGrup(mode==='lokasi'?lokForm:umForm,'anorganik');
-  const tAll=tOrg+tAnorg;
-
   return(
     <>
-      {/* Mode toggle */}
-      <div className="card" style={{marginBottom:12,padding:'11px 14px'}}>
-        <div style={{display:'flex',gap:8,marginBottom:10}}>
-          {[{id:'lokasi',label:'📍 Input Per Lokasi GI/ULTG'},{id:'umum',label:'📝 Input Harian Umum'}].map(m=>(
-            <button key={m.id} onClick={()=>setMode(m.id)} className={mode===m.id?'btn btn-p':'btn btn-s'} style={{fontSize:11,padding:'5px 12px'}}>
-              {m.label}
-            </button>
-          ))}
-        </div>
-
-        {mode==='lokasi'?(
-          <>
-            {/* Dropdown lokasi */}
-            <div className="fld">
-              <label>Pilih Lokasi</label>
-              <select value={lokId} onChange={e=>setLokId(e.target.value)}>
-                <optgroup label="── Kantor UPT ──">
-                  {DATA_LOKASI.filter(l=>l.tipe==='KANTOR').map(l=><option key={l.id} value={l.id}>{l.nama}</option>)}
+      {/* ── Header form: Lokasi + Tanggal ── */}
+      <div className="card" style={{marginBottom:12}}>
+        <div className="card-title">📍 Informasi Pencatatan</div>
+        <div className="g2" style={{marginBottom:10}}>
+          <div className="fld" style={{marginBottom:0}}>
+            <label>Lokasi</label>
+            <select value={lokId} onChange={e=>setLokId(e.target.value)}>
+              <optgroup label="── Kantor UPT ──">
+                {DATA_LOKASI.filter(l=>l.tipe==='KANTOR').map(l=>
+                  <option key={l.id} value={l.id}>{l.nama}</option>)}
+              </optgroup>
+              {['ULTG Keramasan','ULTG Borang','ULTG Betung','ULTG Boombaru'].map(u=>(
+                <optgroup key={u} label={`── ${u} ──`}>
+                  {DATA_LOKASI.filter(l=>l.ultg===u).map(l=>
+                    <option key={l.id} value={l.id}>[{l.tipe}] {l.nama}</option>)}
                 </optgroup>
-                {['ULTG Keramasan','ULTG Borang','ULTG Betung','ULTG Boombaru'].map(u=>(
-                  <optgroup key={u} label={`── ${u} ──`}>
-                    {DATA_LOKASI.filter(l=>l.ultg===u).map(l=>(
-                      <option key={l.id} value={l.id}>[{l.tipe}] {l.nama} — {l.kota}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-
-            {/* Info lokasi terpilih */}
-            {selLok&&(
-              <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',background:'var(--bg)',borderRadius:7,marginBottom:8,border:'1px solid var(--border)'}}>
-                <span style={{fontSize:18}}>{iconTipe(selLok.tipe)}</span>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:11,fontWeight:700,color:'var(--white)'}}>{selLok.nama}</div>
-                  <div style={{fontSize:9,color:'var(--muted)'}}>{selLok.kota} · <span style={{color:warnaTipe(selLok.tipe),fontWeight:700}}>{selLok.tipe}</span> · {selLok.ultg}</div>
-                </div>
-                <div style={{display:'flex',gap:6'}}>
-                  <select value={bulan} onChange={e=>setBulan(Number(e.target.value))} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:6,color:'var(--text)',padding:'4px 7px',fontSize:10,outline:'none',width:'auto'}}>
-                    {BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}
-                  </select>
-                  <select value={tahun} onChange={e=>setTahun(Number(e.target.value))} style={{background:'var(--card)',border:'1px solid var(--border)',borderRadius:6,color:'var(--text)',padding:'4px 7px',fontSize:10,outline:'none',width:'auto'}}>
-                    {TAHUN_OPT.map(y=><option key={y}>{y}</option>)}
-                  </select>
-                </div>
-              </div>
-            )}
-          </>
-        ):(
+              ))}
+            </select>
+          </div>
           <div className="fld" style={{marginBottom:0}}>
             <label>Tanggal Pencatatan</label>
-            <input type="date" value={umForm.tanggal} onChange={e=>setUF('tanggal',e.target.value)} style={{maxWidth:220}}/>
+            <input type="date" value={tanggal} onChange={e=>setTanggal(e.target.value)}/>
+          </div>
+        </div>
+        {/* Badge lokasi terpilih */}
+        {selLok&&(
+          <div style={{display:'flex',alignItems:'center',gap:8,padding:'7px 10px',background:'var(--bg)',borderRadius:7,border:'1px solid var(--border)'}}>
+            <span style={{fontSize:18,flexShrink:0}}>{iconTipe(selLok.tipe)}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:700,color:'var(--white)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{selLok.nama}</div>
+              <div style={{fontSize:9,color:'var(--muted)'}}>{selLok.kota}&nbsp;·&nbsp;<span style={{color:warnaTipe(selLok.tipe),fontWeight:700}}>{selLok.tipe}</span>&nbsp;·&nbsp;{selLok.ultg}</div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Organik */}
+      {/* ── Organik ── */}
       <div className="card">
-        <div className="card-title">🌿 Sampah Organik {tOrg>0&&<span style={{marginLeft:'auto',color:'var(--c-daun)',fontSize:11}}>{fmtKg(tOrg)}</span>}</div>
-        <div className="sec-strip ss-org" style={{fontSize:10}}>Masukkan volume & pilih metode pengelolaan per jenis</div>
+        <div className="card-title">🌿 Sampah Organik{tOrg>0&&<span style={{marginLeft:'auto',color:'var(--c-daun)',fontSize:11}}>{fmtKg(tOrg)}</span>}</div>
+        <div className="sec-strip ss-org" style={{fontSize:10}}>Volume & metode pengelolaan per jenis</div>
         <div className="g2" style={{marginBottom:8}}>
-          {JENIS_ORG.map(j=><JenisCard key={j.key} j={j}
-            form={mode==='lokasi'?lokForm:umForm}
-            setField={mode==='lokasi'?setLF:setUF}/>)}
+          {JENIS_ORG.map(j=><JenisCard key={j.key} j={j} form={form} setField={setF}/>)}
         </div>
-        {tOrg>0&&<div style={{display:'flex',justifyContent:'flex-end',padding:'5px 9px',background:'rgba(93,189,106,.06)',borderRadius:7,fontSize:10}}><span style={{color:'var(--muted)'}}>Sub-total:&nbsp;</span><strong style={{color:'var(--c-daun)'}}>{fmtKg(tOrg)}</strong></div>}
+        {tOrg>0&&<div style={{display:'flex',justifyContent:'flex-end',padding:'5px 9px',background:'rgba(93,189,106,.06)',borderRadius:7,fontSize:10}}>
+          <span style={{color:'var(--muted)'}}>Sub-total:&nbsp;</span><strong style={{color:'var(--c-daun)'}}>{fmtKg(tOrg)}</strong>
+        </div>}
         <div className="ib ib-g" style={{marginTop:8}}>🍃 <strong style={{color:'var(--c-daun)'}}>Daun</strong> — daun kering, ranting &nbsp;|&nbsp; 🍱 <strong style={{color:'var(--c-makan)'}}>Sisa Makanan</strong> — limbah dapur</div>
       </div>
 
-      {/* Anorganik */}
+      {/* ── Anorganik ── */}
       <div className="card">
-        <div className="card-title">🧴 Sampah Anorganik {tAnorg>0&&<span style={{marginLeft:'auto',color:'var(--c-kertas)',fontSize:11}}>{fmtKg(tAnorg)}</span>}</div>
-        <div className="sec-strip ss-anorg" style={{fontSize:10}}>Masukkan volume & pilih metode pengelolaan per jenis</div>
+        <div className="card-title">🧴 Sampah Anorganik{tAnorg>0&&<span style={{marginLeft:'auto',color:'var(--c-kertas)',fontSize:11}}>{fmtKg(tAnorg)}</span>}</div>
+        <div className="sec-strip ss-anorg" style={{fontSize:10}}>Volume & metode pengelolaan per jenis</div>
         <div className="g3" style={{marginBottom:8}}>
-          {JENIS_ANORG.map(j=><JenisCard key={j.key} j={j}
-            form={mode==='lokasi'?lokForm:umForm}
-            setField={mode==='lokasi'?setLF:setUF}/>)}
+          {JENIS_ANORG.map(j=><JenisCard key={j.key} j={j} form={form} setField={setF}/>)}
         </div>
-        {tAnorg>0&&<div style={{display:'flex',justifyContent:'flex-end',padding:'5px 9px',background:'rgba(201,168,76,.06)',borderRadius:7,fontSize:10}}><span style={{color:'var(--muted)'}}>Sub-total:&nbsp;</span><strong style={{color:'var(--c-kertas)'}}>{fmtKg(tAnorg)}</strong></div>}
-        <div className="ib ib-a" style={{marginTop:8}}>📦 <strong style={{color:'var(--c-kertas)'}}>Kertas</strong> &nbsp;|&nbsp; 🧴 <strong style={{color:'var(--c-plastik)'}}>Plastik</strong> &nbsp;|&nbsp; 🔩 <strong style={{color:'var(--c-lain)'}}>Lain-lain</strong> (kaca, besi, logam)</div>
+        {tAnorg>0&&<div style={{display:'flex',justifyContent:'flex-end',padding:'5px 9px',background:'rgba(201,168,76,.06)',borderRadius:7,fontSize:10}}>
+          <span style={{color:'var(--muted)'}}>Sub-total:&nbsp;</span><strong style={{color:'var(--c-kertas)'}}>{fmtKg(tAnorg)}</strong>
+        </div>}
+        <div className="ib ib-a" style={{marginTop:8}}>📦 <strong style={{color:'var(--c-kertas)'}}>Kertas</strong> &nbsp;|&nbsp; 🧴 <strong style={{color:'var(--c-plastik)'}}>Plastik</strong> &nbsp;|&nbsp; 🔩 <strong style={{color:'var(--c-lain)'}}>Lain-lain</strong></div>
       </div>
 
-      {/* Preview & submit */}
+      {/* ── Preview & Simpan ── */}
       <div className="card">
         <div className="card-title">📝 Simpan</div>
-        {mode==='umum'&&(
-          <div className="fld">
-            <label>Catatan (opsional)</label>
-            <textarea rows={2} placeholder="Kondisi khusus, event, dll..." value={umForm.keterangan} onChange={e=>setUF('keterangan',e.target.value)}/>
-          </div>
-        )}
+        <div className="fld">
+          <label>Catatan (opsional)</label>
+          <textarea rows={2} placeholder="Kondisi khusus, cuaca, event, dll..." value={form.keterangan} onChange={e=>setF('keterangan',e.target.value)}/>
+        </div>
         {tAll>0&&(
           <div className="pv-box">
-            <div className="pv-title">Pratinjau {mode==='lokasi'&&selLok?`— ${selLok.nama} · ${BULAN_FULL[bulan]} ${tahun}`:''}</div>
+            <div className="pv-title">Pratinjau — {selLok?.nama} · {tanggal}</div>
             <div className="pv-grid">
-              {JENIS.filter(j=>vNum((mode==='lokasi'?lokForm:umForm)[j.key])>0).map(j=>(
+              {JENIS.filter(j=>vNum(form[j.key])>0).map(j=>(
                 <div key={j.key}>
                   <div className="pv-lbl">{j.icon} {j.label}</div>
-                  <div className="pv-val" style={{color:j.color}}>{fmtKg((mode==='lokasi'?lokForm:umForm)[j.key])}</div>
+                  <div className="pv-val" style={{color:j.color}}>{fmtKg(form[j.key])}</div>
+                  <div style={{fontSize:9,marginTop:1}}><span className={`pill ${pPen(form[penKey(j.key)]||'Komposting')}`}>{form[penKey(j.key)]||'Komposting'}</span></div>
                 </div>
               ))}
             </div>
@@ -880,8 +852,10 @@ function PageInput({records,setRecords,sampahLokasi,setSampahLokasi,showToast}){
           </div>
         )}
         <div className="btn-row">
-          <button className="btn btn-p" onClick={mode==='lokasi'?saveLokasi:saveUmum}>✓ Simpan Data</button>
-          <button className="btn btn-s" onClick={()=>{setLokForm({});setUmForm(f=>({...f,daun:'',makan:'',kertas:'',plastik:'',lain:'',keterangan:''}));}}>✕ Reset</button>
+          <button className="btn btn-p" onClick={save}>✓ Simpan Data</button>
+          <button className="btn btn-s" onClick={()=>setForm({daun:'',makan:'',kertas:'',plastik:'',lain:'',
+            pen_daun:'Komposting',pen_makan:'Komposting',
+            pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',keterangan:''})}>✕ Reset</button>
         </div>
       </div>
     </>

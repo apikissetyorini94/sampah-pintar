@@ -6,7 +6,7 @@
 <meta http-equiv="pragma" content="no-cache"/>
 <meta http-equiv="expires" content="0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SampahPintar ♻ — UPT PLN Palembang v4</title>
+<title>SampahPintar ♻ — UPT PLN Palembang v6</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -14,6 +14,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -232,6 +233,18 @@ tr:hover td{background:rgba(93,189,106,.03)}
 .pred-val{font-size:22px;font-family:'Syne',sans-serif;font-weight:800;color:var(--white)}
 .pred-note{font-size:9px;color:#9b8ff0;margin-top:3px;line-height:1.5}
 
+
+/* ── Supabase / Loading ── */
+.db-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700}
+.db-ok{background:rgba(93,189,106,.15);color:var(--g1)}
+.db-err{background:rgba(224,112,80,.15);color:var(--g3)}
+.db-loading{background:rgba(201,168,76,.15);color:var(--g2)}
+.loading-overlay{position:fixed;inset:0;background:rgba(13,27,18,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;gap:14px}
+.loading-spin{width:44px;height:44px;border:4px solid var(--border);border-top-color:var(--g1);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-family:'Syne',sans-serif;font-size:14px;color:var(--g1)}
+.loading-sub{font-size:11px;color:var(--muted)}
+
 /* ── Peta / Leaflet ── */
 #leaflet-map{width:100%;height:100%}
 .leaflet-popup-content-wrapper{background:var(--card)!important;border:1px solid var(--border)!important;border-radius:10px!important;box-shadow:0 8px 28px rgba(0,0,0,.55)!important;color:var(--text)!important;padding:0!important}
@@ -330,6 +343,100 @@ const BULAN_SHORT=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','
 const TODAY=new Date();
 const TAHUN_OPT=[2024,2025,2026,2027];
 
+
+// ── SUPABASE CONFIG ────────────────────────────────────────────
+const SUPA_URL = 'https://njsiawaxcrxfnduxwnnp.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qc2lhd2F4Y3J4Zm5kdXh3bm5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NTU2MDksImV4cCI6MjA5MjAzMTYwOX0.AlLwyRysfIkLeym1ShKAGGqJtj8RGxEYec3yB0Oy1V8';
+const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── DB helpers ─────────────────────────────────────────────────
+// Load semua records dari Supabase
+async function dbLoadRecords() {
+  const { data, error } = await supa
+    .from('sampah_records')
+    .select('*')
+    .order('tanggal', { ascending: false });
+  if (error) throw error;
+  // Konversi format DB → format app
+  return (data || []).map(r => ({
+    id:          r.id,
+    tanggal:     r.tanggal,
+    lokasiId:    r.lokasi_id,
+    lokasiNama:  r.lokasi_nama,
+    lokasiULTG:  r.lokasi_ultg,
+    lokTipe:     r.lokasi_tipe,
+    daun:        String(r.vol_daun   || 0),
+    makan:       String(r.vol_makan  || 0),
+    kertas:      String(r.vol_kertas || 0),
+    plastik:     String(r.vol_plastik|| 0),
+    lain:        String(r.vol_lain   || 0),
+    pen_daun:    r.pen_daun    || 'Komposting',
+    pen_makan:   r.pen_makan   || 'Komposting',
+    pen_kertas:  r.pen_kertas  || 'Bank Sampah',
+    pen_plastik: r.pen_plastik || 'Bank Sampah',
+    pen_lain:    r.pen_lain    || 'TPA',
+    keterangan:  r.keterangan  || '',
+  }));
+}
+
+// Simpan 1 record ke Supabase
+async function dbInsertRecord(entry) {
+  const { data, error } = await supa.from('sampah_records').insert([{
+    tanggal:      entry.tanggal,
+    lokasi_id:    entry.lokasiId,
+    lokasi_nama:  entry.lokasiNama,
+    lokasi_ultg:  entry.lokasiULTG,
+    lokasi_tipe:  entry.lokTipe,
+    vol_daun:     parseFloat(entry.daun)    || 0,
+    vol_makan:    parseFloat(entry.makan)   || 0,
+    vol_kertas:   parseFloat(entry.kertas)  || 0,
+    vol_plastik:  parseFloat(entry.plastik) || 0,
+    vol_lain:     parseFloat(entry.lain)    || 0,
+    pen_daun:     entry.pen_daun    || 'Komposting',
+    pen_makan:    entry.pen_makan   || 'Komposting',
+    pen_kertas:   entry.pen_kertas  || 'Bank Sampah',
+    pen_plastik:  entry.pen_plastik || 'Bank Sampah',
+    pen_lain:     entry.pen_lain    || 'TPA',
+    keterangan:   entry.keterangan  || '',
+  }]).select().single();
+  if (error) throw error;
+  return data.id; // kembalikan UUID dari DB
+}
+
+// Hapus record dari Supabase
+async function dbDeleteRecord(id) {
+  const { error } = await supa.from('sampah_records').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Build sampahLokasi (state peta) dari records
+function buildSampahLokasi(records) {
+  const result = {};
+  DATA_LOKASI.forEach(l => { result[l.id] = []; });
+  records.forEach(r => {
+    if (!r.lokasiId || !result[r.lokasiId]) return;
+    const d = new Date(r.tanggal);
+    const bulan = d.getMonth(), tahun = d.getFullYear();
+    const existing = result[r.lokasiId].find(e => e.bulan === bulan && e.tahun === tahun);
+    if (existing) {
+      // Akumulasi jika ada multiple records di bulan yang sama
+      JENIS.forEach(j => { existing[j.key] = String(parseFloat(existing[j.key]||0) + parseFloat(r[j.key]||0)); });
+    } else {
+      result[r.lokasiId].push({
+        bulan, tahun,
+        daun: r.daun, makan: r.makan, kertas: r.kertas, plastik: r.plastik, lain: r.lain,
+        pen_daun: r.pen_daun, pen_makan: r.pen_makan,
+        pen_kertas: r.pen_kertas, pen_plastik: r.pen_plastik, pen_lain: r.pen_lain,
+      });
+    }
+  });
+  // Sort tiap lokasi
+  Object.keys(result).forEach(k => {
+    result[k].sort((a,b) => a.tahun !== b.tahun ? a.tahun - b.tahun : a.bulan - b.bulan);
+  });
+  return result;
+}
+
 const fmt   =n=>Number(n||0).toFixed(1);
 const fmtKg =n=>`${fmt(n)} kg`;
 const vNum  =v=>Math.max(0,parseFloat(v)||0);
@@ -350,25 +457,9 @@ function iconTipe(t){
 }
 
 // Dummy data
-function genDummy(seed){
-  const d=[];
-  for(let m=2;m>=0;m--){
-    const dt=new Date(TODAY.getFullYear(),TODAY.getMonth()-m,1);
-    const b=(seed%7+2)*1.8;
-    d.push({bulan:dt.getMonth(),tahun:dt.getFullYear(),
-      daun:+(b*(0.8+Math.random()*.5)).toFixed(1),
-      makan:+(b*(0.5+Math.random()*.4)).toFixed(1),
-      kertas:+(b*(0.3+Math.random()*.3)).toFixed(1),
-      plastik:+(b*(0.4+Math.random()*.3)).toFixed(1),
-      lain:+(b*(0.15+Math.random()*.2)).toFixed(1),
-      pen_daun:'Komposting',pen_makan:'TPA',
-      pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',
-    });
-  }
-  return d;
-}
-const SAMPAH_AWAL={};
-DATA_LOKASI.forEach((l,i)=>{ SAMPAH_AWAL[l.id]=genDummy(i*5+7); });
+// genDummy removed — data dari Supabase
+// Data dummy tidak dipakai lagi — data dari Supabase DB
+// const SAMPAH_AWAL = {};
 
 function totBulanIni(d){
   if(!d||!d.length)return{total:0,org:0,anorg:0};
@@ -409,16 +500,140 @@ function runAI(records){
   return{keys,months,n,pT,pO,pA,tren,trenPct,skor,tpa,komp,bank,lastM:months[li],predLabel:BULAN_SHORT[nd.getMonth()]+' '+nd.getFullYear(),reko};
 }
 
-// ── Export Excel ───────────────────────────────────────────────
-function exportExcel(records,bulanIdx,tahun){
+// ── Export Excel Template FR-K3L-PLH-13 ────────────────────────
+// Konversi angka bulan Indonesia
+const BULAN_ID_MAP={
+  'Januari':'Januari','Februari':'Februari','Maret':'Maret','April':'April',
+  'Mei':'Mei','Juni':'Juni','Juli':'Juli','Agustus':'Agustus',
+  'September':'September','Oktober':'Oktober','November':'November','Desember':'Desember'
+};
+
+function numBulan(tgl){
+  const d=new Date(tgl); return d.getDate();
+}
+function namaBulan(tgl){
+  const d=new Date(tgl); return BULAN_FULL[d.getMonth()];
+}
+
+// Header template FR-K3L-PLH-13 (catatan standar)
+function headerPLN(){
+  return [
+    ['Catatan:','1. Form ini diisi oleh Kegiatan yang menghasilkan limbah non B3 (kecuali FABA)'],
+    [null,'2. Terdapat 2 form pengelolaan limbah non B3 yaitu form summary pengelolaan limbah non B3 dan form rincian pengelolaan limbah non B3'],
+    [null,'3. Form summary diisi oleh Unit Induk yang merupakan rekapan dari form rincian pengelolaan limbah non B3'],
+    [null,'4. Form rincian pengelolaan limbah non B3 diisi oleh masing-masing PIC Unit Pelaksana/ Sub Unit Pelaksana dan diisi untuk masing-masing Kegiatan (K) dibawahnya'],
+    [null,'5. Apabila suatu kegiatan belum melakukan program pengurangan atau pemanfaatan limbah non B3. Unit agar tetap mengisi Form ini dengan mengisikan angka "0" pada kolom jumlah pengurangan atau pemanfaatan dan "belum ada" pada kolom program pengurangan atau pemanfaatan limbah non B3'],
+    [],
+    ['2. Form Rincian Pengelolaan Limbah non B3'],
+  ];
+}
+
+// Buat sheet OR (organik) format PLN
+function buildSheetOR(rows){
+  const hdrBase=headerPLN();
+  const hdrKol=[
+    ['Nama Kegiatan','Sub Jenis Kegiatan','Tanggal','Bulan','Tahun','Sampah Organik',null,null,null,null,null,null],
+    [null,null,null,null,null,'Jenis Sampah Organik','Jumlah yang dihasilkan (Kg)','Program Pengurangan','Jumlah yang dikurangi','Program Pemanfaatan','Jumlah yang dimanfaatkan','kompos yang dihasilkan'],
+  ];
+  const dataRows=[];
+  rows.forEach(r=>{
+    const tgl=numBulan(r.tanggal);
+    const bln=namaBulan(r.tanggal);
+    const thn=new Date(r.tanggal).getFullYear();
+    const lok=r.lokasiNama||'UPT PLM';
+    const sub=r.lokTipe||'Kantor';
+    const pen_daun=r.pen_daun||'Komposting';
+    const pen_makan=r.pen_makan||'Komposting';
+    const vol_daun=vNum(r.daun);
+    const vol_makan=vNum(r.makan);
+    const kompos_daun=pen_daun==='Komposting'?vol_daun:0;
+    const kompos_makan=pen_makan==='Komposting'?vol_makan:0;
+    if(vol_daun>0||true){
+      dataRows.push([lok,sub,tgl,bln,thn,'Daun',vol_daun>0?vol_daun:null,'belum ada',0,pen_daun,vol_daun>0?vol_daun:0,kompos_daun>0?kompos_daun:0]);
+    }
+    if(vol_makan>0||true){
+      dataRows.push([lok,sub,tgl,bln,thn,'Sisa Makanan',vol_makan>0?vol_makan:null,'belum ada',0,pen_makan,vol_makan>0?vol_makan:0,kompos_makan>0?kompos_makan:0]);
+    }
+  });
+  return [...hdrBase,...hdrKol,...dataRows];
+}
+
+// Buat sheet ANOR (anorganik) format PLN
+function buildSheetANOR(rows){
+  const hdrBase=headerPLN();
+  const hdrKol=[
+    ['Nama Kegiatan','Sub Jenis Kegiatan','Tanggal','Bulan','Tahun','Sampah Anorganik',null,null,null,null,null],
+    [null,null,null,null,null,'Jenis Sampah Anorganik','Jumlah yang dihasilkan (Kg)','Program pengurangan','Jumlah yang dikurangi','Program pemanfaatan','Jumlah yang dimanfaatkan (Kg)'],
+  ];
+  const dataRows=[];
+  rows.forEach(r=>{
+    const tgl=numBulan(r.tanggal);
+    const bln=namaBulan(r.tanggal);
+    const thn=new Date(r.tanggal).getFullYear();
+    const lok=r.lokasiNama||'UPT PLM';
+    const sub=r.lokTipe||'Kantor';
+    const pen_kertas=r.pen_kertas||'Bank Sampah';
+    const pen_plastik=r.pen_plastik||'Bank Sampah';
+    const pen_lain=r.pen_lain||'TPA';
+    const vol_kertas=vNum(r.kertas);
+    const vol_plastik=vNum(r.plastik);
+    const vol_lain=vNum(r.lain);
+    dataRows.push([lok,sub,tgl,bln,thn,'Kertas/Kardus',vol_kertas>0?vol_kertas:null,'belum ada',0,pen_kertas,vol_kertas>0?vol_kertas:0]);
+    dataRows.push([lok,sub,tgl,bln,thn,'Plastik (Botol/Kantong)',vol_plastik>0?vol_plastik:null,'belum ada',0,pen_plastik,vol_plastik>0?vol_plastik:0]);
+    dataRows.push([lok,sub,tgl,bln,thn,'Lain-Lain (Kaca/besi)',vol_lain>0?vol_lain:null,'belum ada',0,pen_lain,vol_lain>0?vol_lain:0]);
+  });
+  return [...hdrBase,...hdrKol,...dataRows];
+}
+
+function exportExcel(records,bulanIdx,tahun,mode){
   const XLSX=window.XLSX,nb=BULAN_FULL[bulanIdx],wb=XLSX.utils.book_new();
   const rows=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===bulanIdx&&d.getFullYear()===tahun;}).sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
-  const hdr=['Tgl','Lokasi','ULTG','Daun','P.Daun','Sisa Mkn','P.Makan','S.Org','Kertas','P.Kertas','Plastik','P.Plastik','Lain','P.Lain','S.Anorg','TOTAL','Ket'];
-  const body=rows.map(r=>[r.tanggal,r.lokasiNama||'-',r.lokasiULTG||'-',vNum(r.daun),r.pen_daun||'-',vNum(r.makan),r.pen_makan||'-',sumGrup(r,'organik'),vNum(r.kertas),r.pen_kertas||'-',vNum(r.plastik),r.pen_plastik||'-',vNum(r.lain),r.pen_lain||'-',sumGrup(r,'anorganik'),sumAll(r),r.keterangan||'']);
-  const ws=XLSX.utils.aoa_to_sheet([[`DATA HARIAN — ${nb} ${tahun}`],[`Dicetak: ${new Date().toLocaleDateString('id-ID')}`],[],hdr,...body]);
-  ws['!cols']=[10,22,18,8,14,10,14,10,8,14,8,14,8,14,12,9,18].map(w=>({wch:w}));
-  XLSX.utils.book_append_sheet(wb,ws,'Data Harian');
-  XLSX.writeFile(wb,`Laporan_Sampah_${nb}_${tahun}.xlsx`);
+
+  if(mode==='pln'){
+    // ── Template FR-K3L-PLH-13 PLN ──
+    const wsOR=XLSX.utils.aoa_to_sheet(buildSheetOR(rows));
+    wsOR['!cols']=[{wch:18},{wch:10},{wch:7},{wch:12},{wch:7},{wch:22},{wch:20},{wch:14},{wch:15},{wch:18},{wch:20},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,wsOR,'8.PLM-OR');
+
+    const wsANOR=XLSX.utils.aoa_to_sheet(buildSheetANOR(rows));
+    wsANOR['!cols']=[{wch:18},{wch:10},{wch:7},{wch:12},{wch:7},{wch:24},{wch:20},{wch:14},{wch:15},{wch:18},{wch:20}];
+    XLSX.utils.book_append_sheet(wb,wsANOR,'8.PLM-ANOR');
+
+    XLSX.writeFile(wb,`FR-K3L-PLH-13_UPT-PLM_${nb}_${tahun}.xlsx`);
+  } else {
+    // ── Format Internal SampahPintar ──
+    const hdr=['Tgl','Lokasi','ULTG','Tipe','Daun(kg)','P.Daun','Sisa Mkn(kg)','P.Makan','S.Organik','Kertas(kg)','P.Kertas','Plastik(kg)','P.Plastik','Lain(kg)','P.Lain','S.Anorganik','TOTAL','Keterangan'];
+    const body=rows.map(r=>[
+      r.tanggal,r.lokasiNama||'-',r.lokasiULTG||'-',r.lokTipe||'-',
+      vNum(r.daun),r.pen_daun||'-',vNum(r.makan),r.pen_makan||'-',sumGrup(r,'organik'),
+      vNum(r.kertas),r.pen_kertas||'-',vNum(r.plastik),r.pen_plastik||'-',vNum(r.lain),r.pen_lain||'-',sumGrup(r,'anorganik'),
+      sumAll(r),r.keterangan||''
+    ]);
+    const title=[[`LAPORAN TIMBULAN SAMPAH — ${nb} ${tahun} — UPT PLN PALEMBANG`],
+      [`Dicetak: ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`],
+      [`Total ${rows.length} entri, ${fmtKg(rows.reduce((s,r)=>s+sumAll(r),0))}`],
+      []];
+    const ws=XLSX.utils.aoa_to_sheet([...title,hdr,...body]);
+    ws['!cols']=[10,24,18,8,10,14,10,14,10,10,14,10,14,8,14,12,9,22].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb,ws,'Data Harian');
+
+    // Sheet ringkasan per lokasi
+    const lokMap={};
+    rows.forEach(r=>{
+      const k=r.lokasiId||r.lokasiNama;
+      if(!lokMap[k])lokMap[k]={nama:r.lokasiNama,ultg:r.lokasiULTG,tipe:r.lokTipe,daun:0,makan:0,kertas:0,plastik:0,lain:0,cnt:0};
+      lokMap[k].daun+=vNum(r.daun);lokMap[k].makan+=vNum(r.makan);
+      lokMap[k].kertas+=vNum(r.kertas);lokMap[k].plastik+=vNum(r.plastik);
+      lokMap[k].lain+=vNum(r.lain);lokMap[k].cnt++;
+    });
+    const hdr2=['Lokasi','ULTG','Tipe','Daun(kg)','Sisa Mkn(kg)','S.Organik','Kertas(kg)','Plastik(kg)','Lain(kg)','S.Anorganik','TOTAL','Entri'];
+    const body2=Object.values(lokMap).map(x=>[x.nama,x.ultg,x.tipe,x.daun,x.makan,x.daun+x.makan,x.kertas,x.plastik,x.lain,x.kertas+x.plastik+x.lain,x.daun+x.makan+x.kertas+x.plastik+x.lain,x.cnt]);
+    const ws2=XLSX.utils.aoa_to_sheet([[`RINGKASAN PER LOKASI — ${nb} ${tahun}`],[],hdr2,...body2]);
+    ws2['!cols']=[24,18,8,10,10,12,10,10,8,12,10,6].map(w=>({wch:w}));
+    XLSX.utils.book_append_sheet(wb,ws2,'Ringkasan Lokasi');
+
+    XLSX.writeFile(wb,`SampahPintar_${nb}_${tahun}.xlsx`);
+  }
 }
 
 // ── Shared UI ──────────────────────────────────────────────────
@@ -575,8 +790,7 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
         html:`<div style="width:${sz}px;height:${sz}px;border-radius:${rad};background:${c};border:2px solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:${sz>28?13:10}px;cursor:pointer;box-shadow:0 3px 10px ${c}88;transition:transform .2s" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">${iconTipe(lok.tipe)}</div>`,
         iconSize:[sz,sz],iconAnchor:[sz/2,sz/2],
       });
-      const d=SAMPAH_AWAL[lok.id]||[];
-      const stat=d.length?totBulanIni(d):{total:0};
+      const stat={total:0,org:0,anorg:0}; // Data real dari DB ditampilkan di panel
       const marker=L.marker([lok.lat,lok.lng],{icon}).addTo(map);
       marker.bindPopup(`
         <div class="pop-wrap">
@@ -693,7 +907,7 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
 // ══════════════════════════════════════════════════════════════
 // MODAL INPUT SAMPAH PER LOKASI
 // ══════════════════════════════════════════════════════════════
-function ModalInput({lok,sampahLokasi,setSampahLokasi,showToast,onClose}){
+function ModalInput({lok,sampahLokasi,setSampahLokasi,addRecord,showToast,onClose}){
   const [bulan,setBulan]=useState(TODAY.getMonth());
   const [tahun,setTahun]=useState(TODAY.getFullYear());
   const existing=useMemo(()=>{
@@ -710,24 +924,31 @@ function ModalInput({lok,sampahLokasi,setSampahLokasi,showToast,onClose}){
 
   const setF=(k,v)=>setForm(f=>({...f,[k]:v}));
 
-  function save(){
+  const [mSaving,setMSaving]=useState(false);
+  async function save(){
     if(sumAll(form)===0){showToast('⚠️ Isi minimal satu jenis sampah');return;}
-    const entry={...form,bulan,tahun,
+    setMSaving(true);
+    // Buat tanggal dari bulan/tahun (gunakan tgl 1)
+    const tgl=`${tahun}-${String(bulan+1).padStart(2,'0')}-01`;
+    const entry={
+      ...form,
+      tanggal:tgl,
+      lokasiId:lok.id,
+      lokasiNama:lok.nama,
+      lokasiULTG:lok.ultg,
+      lokTipe:lok.tipe,
       pen_daun:form.pen_daun||'Komposting',
       pen_makan:form.pen_makan||'Komposting',
       pen_kertas:form.pen_kertas||'Bank Sampah',
       pen_plastik:form.pen_plastik||'Bank Sampah',
       pen_lain:form.pen_lain||'TPA',
     };
-    setSampahLokasi(prev=>{
-      const arr=[...(prev[lok.id]||[])];
-      const idx=arr.findIndex(e=>e.bulan===entry.bulan&&e.tahun===entry.tahun);
-      if(idx>=0)arr[idx]=entry;else arr.push(entry);
-      arr.sort((a,b)=>a.tahun!==b.tahun?a.tahun-b.tahun:a.bulan-b.bulan);
-      return{...prev,[lok.id]:arr};
-    });
-    showToast(`✅ Data ${lok.nama} berhasil disimpan!`);
-    onClose();
+    const ok = await addRecord(entry);
+    setMSaving(false);
+    if(ok){
+      showToast(`✅ Data ${lok.nama} tersimpan ke database!`);
+      onClose();
+    }
   }
 
   const tOrg=sumGrup(form,'organik'),tAnorg=sumGrup(form,'anorganik');
@@ -783,8 +1004,8 @@ function ModalInput({lok,sampahLokasi,setSampahLokasi,showToast,onClose}){
         )}
 
         <div className="btn-row">
-          <button className="btn btn-p" onClick={save}>✓ Simpan Data</button>
-          <button className="btn btn-s" onClick={onClose}>Batal</button>
+          <button className="btn btn-p" onClick={save} disabled={mSaving} style={{opacity:mSaving?.7:1}}>{mSaving?'⏳ Menyimpan...':'✓ Simpan Data'}</button>
+          <button className="btn btn-s" onClick={onClose} disabled={mSaving}>Batal</button>
         </div>
       </div>
     </div>
@@ -794,7 +1015,7 @@ function ModalInput({lok,sampahLokasi,setSampahLokasi,showToast,onClose}){
 // ══════════════════════════════════════════════════════════════
 // PAGE: INPUT HARIAN — 1 form dengan dropdown lokasi
 // ══════════════════════════════════════════════════════════════
-function PageInput({records,setRecords,sampahLokasi,setSampahLokasi,showToast}){
+function PageInput({records,addRecord,sampahLokasi,setSampahLokasi,showToast}){
   const [lokId,  setLokId ]=useState(DATA_LOKASI[0].id);
   const [tanggal,setTanggal]=useState(TODAY.toISOString().split('T')[0]);
   const [form,   setForm  ]=useState({
@@ -810,37 +1031,27 @@ function PageInput({records,setRecords,sampahLokasi,setSampahLokasi,showToast}){
   const tAnorg=sumGrup(form,'anorganik');
   const tAll=tOrg+tAnorg;
 
-  function save(){
+  const [saving,setSaving]=useState(false);
+  async function save(){
     if(!tanggal){showToast('⚠️ Pilih tanggal');return;}
     if(tAll===0){showToast('⚠️ Isi minimal satu jenis sampah');return;}
+    setSaving(true);
     const entry={
       ...form,
-      id:Date.now(),
       tanggal,
       lokasiId:lokId,
       lokasiNama:selLok?.nama||'-',
       lokasiULTG:selLok?.ultg||'-',
       lokTipe:selLok?.tipe||'-',
     };
-    setRecords(r=>[...r,entry]);
-    // Simpan juga ke data lokasi untuk peta
-    const bulanTgl=new Date(tanggal).getMonth();
-    const tahunTgl=new Date(tanggal).getFullYear();
-    const entryLok={...form,bulan:bulanTgl,tahun:tahunTgl,
-      pen_daun:form.pen_daun||'Komposting',pen_makan:form.pen_makan||'Komposting',
-      pen_kertas:form.pen_kertas||'Bank Sampah',pen_plastik:form.pen_plastik||'Bank Sampah',pen_lain:form.pen_lain||'TPA',
-    };
-    setSampahLokasi(prev=>{
-      const arr=[...(prev[lokId]||[])];
-      const idx=arr.findIndex(e=>e.bulan===bulanTgl&&e.tahun===tahunTgl);
-      if(idx>=0)arr[idx]=entryLok;else arr.push(entryLok);
-      arr.sort((a,b)=>a.tahun!==b.tahun?a.tahun-b.tahun:a.bulan-b.bulan);
-      return{...prev,[lokId]:arr};
-    });
-    setForm({daun:'',makan:'',kertas:'',plastik:'',lain:'',
-      pen_daun:'Komposting',pen_makan:'Komposting',
-      pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',keterangan:''});
-    showToast(`✅ Data ${selLok?.nama} berhasil disimpan!`);
+    const ok = await addRecord(entry);
+    setSaving(false);
+    if(ok){
+      setForm({daun:'',makan:'',kertas:'',plastik:'',lain:'',
+        pen_daun:'Komposting',pen_makan:'Komposting',
+        pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',keterangan:''});
+      showToast(`✅ Data ${selLok?.nama} tersimpan ke database!`);
+    }
   }
 
   return(
@@ -934,10 +1145,10 @@ function PageInput({records,setRecords,sampahLokasi,setSampahLokasi,showToast}){
           </div>
         )}
         <div className="btn-row">
-          <button className="btn btn-p" onClick={save}>✓ Simpan Data</button>
+          <button className="btn btn-p" onClick={save} disabled={saving} style={{opacity:saving?.7:1}}>{saving?'⏳ Menyimpan...':'✓ Simpan Data'}</button>
           <button className="btn btn-s" onClick={()=>setForm({daun:'',makan:'',kertas:'',plastik:'',lain:'',
             pen_daun:'Komposting',pen_makan:'Komposting',
-            pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',keterangan:''})}>✕ Reset</button>
+            pen_kertas:'Bank Sampah',pen_plastik:'Bank Sampah',pen_lain:'TPA',keterangan:''})} disabled={saving}>✕ Reset</button>
         </div>
       </div>
     </>
@@ -1020,14 +1231,105 @@ function PageAI({records}){
 
 // PAGE EKSPOR
 function PageEkspor({records,showToast}){
-  const [b,setB]=useState(TODAY.getMonth());const[y,setY]=useState(TODAY.getFullYear());
+  const [b,setB]=useState(TODAY.getMonth());
+  const [y,setY]=useState(TODAY.getFullYear());
   const f=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===b&&d.getFullYear()===y;});
   const tot=f.reduce((s,r)=>s+sumAll(r),0);
-  return(<><MonthSel bulan={b} setBulan={setB} tahun={y} setTahun={setY}/>
-    <div className="card" style={{borderColor:'rgba(93,189,106,.3)'}}><div style={{display:'flex',gap:11,alignItems:'center',marginBottom:12}}><span style={{fontSize:24}}>📊</span><div><div className="card-title" style={{marginBottom:1}}>Ekspor — {BULAN_FULL[b]} {y}</div><div style={{fontSize:10,color:'var(--muted)'}}>{f.length} entri · {fmtKg(tot)}</div></div></div>
-      {[{icon:'📋',name:'Sheet 1: Data Harian',desc:'Tanggal, Lokasi, ULTG, per jenis + pengelolaan + total'},{icon:'📄',name:'Sheet 2: Laporan',desc:'Laporan bulanan siap cetak'}].map(x=>(<div key={x.name} style={{display:'flex',gap:9,marginBottom:8}}><span>{x.icon}</span><div><div style={{fontSize:11,fontWeight:600,color:'var(--white)'}}>{x.name}</div><div style={{fontSize:9,color:'var(--muted)'}}>{x.desc}</div></div></div>))}
-      {f.length===0?<div className="ib ib-r">⚠ Tidak ada data.</div>:<button className="btn btn-p" style={{fontSize:12,padding:'8px 18px'}} onClick={()=>{try{exportExcel(records,b,y);showToast('✅ Excel berhasil diunduh!');}catch(e){showToast('⚠️ '+e.message);}}}>⬇ Unduh Excel (.xlsx)</button>}
-    </div></>);
+  const totOR=f.reduce((s,r)=>s+sumGrup(r,'organik'),0);
+  const totANOR=f.reduce((s,r)=>s+sumGrup(r,'anorganik'),0);
+
+  const doExport=(mode)=>{
+    try{
+      exportExcel(records,b,y,mode);
+      showToast(mode==='pln'?'✅ Template FR-K3L-PLH-13 berhasil diunduh!':'✅ Excel SampahPintar berhasil diunduh!');
+    }catch(e){showToast('⚠️ '+e.message);}
+  };
+
+  return(<>
+    <MonthSel bulan={b} setBulan={setB} tahun={y} setTahun={setY}/>
+
+    {/* Info data */}
+    <div className="card" style={{marginBottom:10}}>
+      <div className="card-title">📊 Ringkasan — {BULAN_FULL[b]} {y}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginTop:8}}>
+        {[
+          {l:'Total Entri',v:f.length,c:'var(--white)'},
+          {l:'Organik',v:fmtKg(totOR),c:'var(--c-daun)'},
+          {l:'Anorganik',v:fmtKg(totANOR),c:'var(--c-kertas)'},
+        ].map(x=>(
+          <div key={x.l} style={{background:'var(--bg)',border:'1px solid var(--border)',borderRadius:8,padding:'8px 10px',textAlign:'center'}}>
+            <div style={{fontSize:11,fontWeight:700,color:x.c}}>{x.v}</div>
+            <div style={{fontSize:9,color:'var(--muted)',marginTop:2}}>{x.l}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Opsi 1: Template PLN */}
+    <div className="card" style={{marginBottom:10,borderColor:'rgba(30,144,255,.35)'}}>
+      <div style={{display:'flex',gap:10,alignItems:'flex-start',marginBottom:10}}>
+        <span style={{fontSize:22}}>🏛️</span>
+        <div>
+          <div className="card-title" style={{marginBottom:3,color:'var(--pln)'}}>Template FR-K3L-PLH-13</div>
+          <div style={{fontSize:10,color:'var(--muted)'}}>Format resmi pelaporan PLN UIP3BS — siap diserahkan ke UIP3B Sumatera</div>
+        </div>
+      </div>
+      <div style={{padding:'8px 10px',background:'rgba(30,144,255,.07)',borderRadius:7,marginBottom:10,fontSize:10}}>
+        {[
+          {icon:'🌿',name:'Sheet 8.PLM-OR',desc:'Sampah Organik — Daun & Sisa Makanan, per tanggal, per lokasi'},
+          {icon:'🧴',name:'Sheet 8.PLM-ANOR',desc:'Sampah Anorganik — Kertas, Plastik, Lain-Lain, per tanggal'},
+        ].map(x=>(
+          <div key={x.name} style={{display:'flex',gap:8,marginBottom:6}}>
+            <span>{x.icon}</span>
+            <div>
+              <span style={{fontWeight:700,color:'var(--white)'}}>{x.name}</span>
+              <span style={{color:'var(--muted)',marginLeft:6}}>{x.desc}</span>
+            </div>
+          </div>
+        ))}
+        <div style={{marginTop:6,padding:'5px 8px',background:'rgba(30,144,255,.12)',borderRadius:5,color:'#89b4fa',fontSize:9}}>
+          ℹ️ Kolom: Nama Kegiatan | Sub Jenis | Tanggal | Bulan | Tahun | Jenis Sampah | Jumlah (Kg) | Program Pengurangan | Jml Dikurangi | Program Pemanfaatan | Jml Dimanfaatkan | Kompos
+        </div>
+      </div>
+      {f.length===0
+        ?<div className="ib ib-r">⚠ Tidak ada data untuk bulan ini.</div>
+        :<button className="btn btn-p" style={{width:'100%',fontSize:12}} onClick={()=>doExport('pln')}>
+          ⬇ Unduh Template PLN — FR-K3L-PLH-13
+        </button>
+      }
+    </div>
+
+    {/* Opsi 2: Format Internal */}
+    <div className="card" style={{borderColor:'rgba(93,189,106,.25)'}}>
+      <div style={{display:'flex',gap:10,alignItems:'flex-start',marginBottom:10}}>
+        <span style={{fontSize:22}}>📊</span>
+        <div>
+          <div className="card-title" style={{marginBottom:3}}>Format Internal SampahPintar</div>
+          <div style={{fontSize:10,color:'var(--muted)'}}>Laporan analitik lengkap dengan ringkasan per lokasi</div>
+        </div>
+      </div>
+      <div style={{padding:'8px 10px',background:'rgba(93,189,106,.07)',borderRadius:7,marginBottom:10,fontSize:10}}>
+        {[
+          {icon:'📋',name:'Sheet Data Harian',desc:'Semua entri + kolom pengelolaan + total per baris'},
+          {icon:'📍',name:'Sheet Ringkasan Lokasi',desc:'Akumulasi per GI/ULTG — total organik, anorganik, grand total'},
+        ].map(x=>(
+          <div key={x.name} style={{display:'flex',gap:8,marginBottom:6}}>
+            <span>{x.icon}</span>
+            <div>
+              <span style={{fontWeight:700,color:'var(--white)'}}>{x.name}</span>
+              <span style={{color:'var(--muted)',marginLeft:6}}>{x.desc}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {f.length===0
+        ?<div className="ib ib-r">⚠ Tidak ada data untuk bulan ini.</div>
+        :<button className="btn" style={{width:'100%',fontSize:12,background:'rgba(93,189,106,.15)',color:'var(--g1)',border:'1px solid rgba(93,189,106,.3)'}} onClick={()=>doExport('internal')}>
+          ⬇ Unduh Laporan SampahPintar
+        </button>
+      }
+    </div>
+  </>);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1051,20 +1353,76 @@ const PAGE_TITLE={
 };
 
 function App(){
-  const [page,setPage]=useState('peta');
-  const [records,setRecords]=useState([]);
-  const [sampahLokasi,setSampahLokasi]=useState(SAMPAH_AWAL);
-  const [toast,setToast]=useState(null);
-  const [filterULTG,setFilterULTG]=useState('Semua');
-  const [selectedId,setSelectedId]=useState(null);
-  const [modalLok,setModalLok]=useState(null);
+  const [page,      setPage]      = useState('peta');
+  const [records,   setRecords]   = useState([]);
+  const [sampahLok, setSampahLok] = useState({});
+  const [toast,     setToast]     = useState(null);
+  const [filterULTG,setFilterULTG]= useState('Semua');
+  const [selectedId,setSelectedId]= useState(null);
+  const [modalLok,  setModalLok]  = useState(null);
+  const [dbStatus,  setDbStatus]  = useState('loading'); // loading | ok | error
+  const [appLoading,setAppLoading]= useState(true);
 
-  const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),2800);};
-  const onDelete=id=>{setRecords(r=>r.filter(x=>x.id!==id));showToast('🗑 Data dihapus');};
-  const onFlyTo=(lok)=>{setPage('peta');setSelectedId(lok.id);};
-  const openInput=(lok)=>setModalLok(lok);
+  const showToast = msg => { setToast(msg); setTimeout(()=>setToast(null), 3000); };
 
-  const isPeta=page==='peta';
+  // ── Load data dari Supabase saat pertama buka ──
+  useEffect(()=>{
+    (async()=>{
+      try {
+        setDbStatus('loading');
+        const recs = await dbLoadRecords();
+        setRecords(recs);
+        setSampahLok(buildSampahLokasi(recs));
+        setDbStatus('ok');
+      } catch(e) {
+        console.error('DB load error:', e);
+        setDbStatus('error');
+        showToast('⚠️ Gagal memuat data dari server. Periksa koneksi internet.');
+      } finally {
+        setAppLoading(false);
+      }
+    })();
+  }, []);
+
+  // ── Simpan record baru ke DB ──
+  async function addRecord(entry) {
+    try {
+      const dbId = await dbInsertRecord(entry);
+      const newEntry = { ...entry, id: dbId };
+      setRecords(r => [newEntry, ...r]);
+      setSampahLok(buildSampahLokasi([newEntry, ...records]));
+      return true;
+    } catch(e) {
+      console.error('Insert error:', e);
+      showToast('⚠️ Gagal menyimpan ke database. Periksa koneksi internet.');
+      return false;
+    }
+  }
+
+  // ── Hapus record dari DB ──
+  async function deleteRecord(id) {
+    try {
+      await dbDeleteRecord(id);
+      const newRecs = records.filter(x => x.id !== id);
+      setRecords(newRecs);
+      setSampahLok(buildSampahLokasi(newRecs));
+      showToast('🗑 Data berhasil dihapus');
+    } catch(e) {
+      showToast('⚠️ Gagal menghapus data. Periksa koneksi internet.');
+    }
+  }
+
+  const onFlyTo   = lok => { setPage('peta'); setSelectedId(lok.id); };
+  const openInput = lok => setModalLok(lok);
+  const isPeta    = page === 'peta';
+
+  if (appLoading) return(
+    <div className="loading-overlay">
+      <div className="loading-spin"/>
+      <div className="loading-txt">♻ SampahPintar</div>
+      <div className="loading-sub">Memuat data dari server...</div>
+    </div>
+  );
 
   return(
     <>
@@ -1087,22 +1445,27 @@ function App(){
         ))}
         <div className="sb-stats">
           {[
-            {l:'Total Lokasi',v:`${DATA_LOKASI.length}`,c:'var(--white)'},
-            {l:'ULTG',v:'4',c:'var(--ultg)'},
-            {l:'GI / GIS / GITET',v:`${DATA_LOKASI.filter(l=>l.tipe!=='ULTG'&&l.tipe!=='KANTOR').length}`,c:'var(--pln)'},
-            {l:'Data Terinput',v:records.length,c:'var(--g1)'},
+            {l:'Total Lokasi', v:`${DATA_LOKASI.length}`, c:'var(--white)'},
+            {l:'ULTG',         v:'4',                     c:'var(--ultg)'},
+            {l:'GI/GIS/GITET', v:`${DATA_LOKASI.filter(l=>l.tipe!=='ULTG'&&l.tipe!=='KANTOR').length}`, c:'var(--pln)'},
+            {l:'Data Tersimpan',v:records.length,         c:'var(--g1)'},
           ].map(x=>(
             <div key={x.l} className="row">
               <span style={{color:'var(--muted)'}}>{x.l}</span>
               <span className="val" style={{color:x.c}}>{x.v}</span>
             </div>
           ))}
+          <div style={{marginTop:8,paddingTop:8,borderTop:'1px solid var(--border)',display:'flex',alignItems:'center',gap:6}}>
+            <span className={`db-badge ${dbStatus==='ok'?'db-ok':dbStatus==='error'?'db-err':'db-loading'}`}>
+              {dbStatus==='ok'?'🟢 Database OK':dbStatus==='error'?'🔴 Offline':'🟡 Menghubungkan...'}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* KOLOM 2: Map sidebar (peta + filter ULTG) */}
+      {/* KOLOM 2: Map sidebar */}
       <MapSidebar
-        sampahLokasi={sampahLokasi}
+        sampahLokasi={sampahLok}
         filterULTG={filterULTG}
         setFilterULTG={setFilterULTG}
         selectedId={selectedId}
@@ -1120,8 +1483,8 @@ function App(){
 
         {isPeta
           ?<PagePeta
-              sampahLokasi={sampahLokasi}
-              setSampahLokasi={setSampahLokasi}
+              sampahLokasi={sampahLok}
+              setSampahLokasi={setSampahLok}
               showToast={showToast}
               filterULTG={filterULTG}
               selectedId={selectedId}
@@ -1129,8 +1492,8 @@ function App(){
               onInputClick={openInput}
             />
           :<div className="content">
-            {page==='input'   &&<PageInput records={records} setRecords={setRecords} sampahLokasi={sampahLokasi} setSampahLokasi={setSampahLokasi} showToast={showToast}/>}
-            {page==='data'    &&<PageData    records={records} onDelete={onDelete}/>}
+            {page==='input'   &&<PageInput   records={records} addRecord={addRecord} sampahLokasi={sampahLok} setSampahLokasi={setSampahLok} showToast={showToast}/>}
+            {page==='data'    &&<PageData    records={records} onDelete={deleteRecord}/>}
             {page==='laporan' &&<PageLaporan records={records}/>}
             {page==='ai'      &&<PageAI      records={records}/>}
             {page==='ekspor'  &&<PageEkspor  records={records} showToast={showToast}/>}
@@ -1142,8 +1505,9 @@ function App(){
       {modalLok&&(
         <ModalInput
           lok={modalLok}
-          sampahLokasi={sampahLokasi}
-          setSampahLokasi={setSampahLokasi}
+          sampahLokasi={sampahLok}
+          setSampahLokasi={setSampahLok}
+          addRecord={addRecord}
           showToast={showToast}
           onClose={()=>setModalLok(null)}
         />

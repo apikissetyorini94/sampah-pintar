@@ -6,7 +6,7 @@
 <meta http-equiv="pragma" content="no-cache"/>
 <meta http-equiv="expires" content="0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SampahPintar ♻ — UPT PLN Palembang v6</title>
+<title>SampahPintar ♻ — UPT PLN Palembang v7</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -292,40 +292,54 @@ const { useState, useEffect, useRef, useMemo } = React;
 // ── DATA LOKASI UPT PLN PALEMBANG ─────────────────────────────
 const DATA_LOKASI = [
   // Kantor UPT
-  {id:'upt',        tipe:'KANTOR', nama:'Kantor UPT Palembang',      ultg:'UPT',           kota:'Palembang', lat:-2.9476, lng:104.7673},
+  {id:'upt',        tipe:'KANTOR', nama:'Kantor UPT Palembang',      ultg:'UPT',           kota:'Palembang',      lat:-2.9476, lng:104.7673},
   // ULTG Keramasan
-  {id:'ultg-krm',   tipe:'ULTG',   nama:'Kantor ULTG Keramasan',     ultg:'ULTG Keramasan',kota:'Palembang', lat:-2.9918, lng:104.7321},
-  {id:'gi-krm',     tipe:'GI',     nama:'GI Keramasan',              ultg:'ULTG Keramasan',kota:'Palembang', lat:-2.9982, lng:104.7284},
-  {id:'gi-bng',     tipe:'GI',     nama:'GI Bungaran',               ultg:'ULTG Keramasan',kota:'Palembang', lat:-2.9543, lng:104.8012},
-  {id:'gi-mrn',     tipe:'GI',     nama:'GI Mariana',                ultg:'ULTG Keramasan',kota:'Banyuasin', lat:-2.9213, lng:104.8543},
-  {id:'gi-skd',     tipe:'GI',     nama:'GI Sungai Kedukan',         ultg:'ULTG Keramasan',kota:'Banyuasin', lat:-3.0123, lng:104.8321},
-  {id:'gi-njb',     tipe:'GI',     nama:'GI New Jakabaring',         ultg:'ULTG Keramasan',kota:'Palembang', lat:-3.0312, lng:104.7842},
-  {id:'gi-kya',     tipe:'GI',     nama:'GI Kayu Agung',             ultg:'ULTG Keramasan',kota:'OKI',       lat:-3.3891, lng:104.9234},
+  {id:'ultg-krm',   tipe:'ULTG',   nama:'Kantor ULTG Keramasan',     ultg:'ULTG Keramasan',kota:'Palembang',      lat:-2.9918, lng:104.7321},
+  {id:'gi-krm',     tipe:'GI',     nama:'GI Keramasan',              ultg:'ULTG Keramasan',kota:'Palembang',      lat:-2.9982, lng:104.7284},
+  {id:'gi-bng',     tipe:'GI',     nama:'GI Bungaran',               ultg:'ULTG Keramasan',kota:'Palembang',      lat:-2.9543, lng:104.8012},
+  {id:'gi-mrn',     tipe:'GI',     nama:'GI Mariana',                ultg:'ULTG Keramasan',kota:'Banyuasin',      lat:-2.9213, lng:104.8543},
+  {id:'gi-skd',     tipe:'GI',     nama:'GI Sungai Kedukan',         ultg:'ULTG Keramasan',kota:'Banyuasin',      lat:-3.0123, lng:104.8321},
+  {id:'gi-njb',     tipe:'GI',     nama:'GI New Jakabaring',         ultg:'ULTG Keramasan',kota:'Palembang',      lat:-3.0312, lng:104.7842},
+  {id:'gi-kya',     tipe:'GI',     nama:'GI Kayu Agung',             ultg:'ULTG Keramasan',kota:'OKI',            lat:-3.3891, lng:104.9234},
   // ULTG Borang
-  {id:'ultg-brg',   tipe:'ULTG',   nama:'Kantor ULTG Borang',        ultg:'ULTG Borang',   kota:'Palembang', lat:-2.9021, lng:104.6843},
-  {id:'gis-ktb',    tipe:'GIS',    nama:'GIS Kota Barat',            ultg:'ULTG Borang',   kota:'Palembang', lat:-2.9312, lng:104.7021},
-  {id:'gi-tlk',     tipe:'GI',     nama:'GI Talang Kelapa',          ultg:'ULTG Borang',   kota:'Banyuasin', lat:-2.8743, lng:104.6512},
-  {id:'gi-gds',     tipe:'GI',     nama:'GI Gandus',                 ultg:'ULTG Borang',   kota:'Palembang', lat:-2.9543, lng:104.6923},
-  {id:'gi-brg',     tipe:'GI',     nama:'GI Borang',                 ultg:'ULTG Borang',   kota:'Banyuasin', lat:-2.8912, lng:104.6723},
-  {id:'gi-tja',     tipe:'GI',     nama:'GI Tanjung Api-Api',        ultg:'ULTG Borang',   kota:'Banyuasin', lat:-2.8123, lng:104.5234},
-  {id:'gi-ktn',     tipe:'GI',     nama:'GI Kenten',                 ultg:'ULTG Borang',   kota:'Palembang', lat:-2.9123, lng:104.7423},
+  {id:'ultg-brg',   tipe:'ULTG',   nama:'Kantor ULTG Borang',        ultg:'ULTG Borang',   kota:'Palembang',      lat:-2.9021, lng:104.6843},
+  {id:'gis-ktb',    tipe:'GIS',    nama:'GIS Kota Barat',            ultg:'ULTG Borang',   kota:'Palembang',      lat:-2.9312, lng:104.7021},
+  {id:'gi-tlk',     tipe:'GI',     nama:'GI Talang Kelapa',          ultg:'ULTG Borang',   kota:'Banyuasin',      lat:-2.8743, lng:104.6512},
+  {id:'gi-gds',     tipe:'GI',     nama:'GI Gandus',                 ultg:'ULTG Borang',   kota:'Palembang',      lat:-2.9543, lng:104.6923},
+  {id:'gi-brg',     tipe:'GI',     nama:'GI Borang',                 ultg:'ULTG Borang',   kota:'Banyuasin',      lat:-2.8912, lng:104.6723},
+  {id:'gi-tja',     tipe:'GI',     nama:'GI Tanjung Api-Api',        ultg:'ULTG Borang',   kota:'Banyuasin',      lat:-2.8123, lng:104.5234},
+  {id:'gi-ktn',     tipe:'GI',     nama:'GI Kenten',                 ultg:'ULTG Borang',   kota:'Palembang',      lat:-2.9123, lng:104.7423},
   // ULTG Betung
-  {id:'ultg-btg',   tipe:'ULTG',   nama:'Kantor ULTG Betung',        ultg:'ULTG Betung',   kota:'Banyuasin', lat:-2.6432, lng:104.8123},
-  {id:'gitet-btg',  tipe:'GITET',  nama:'GITET Betung',              ultg:'ULTG Betung',   kota:'Banyuasin', lat:-2.6512, lng:104.8234},
-  {id:'gi-sky',     tipe:'GI',     nama:'GI Sekayu',                 ultg:'ULTG Betung',   kota:'Musi Banyuasin',lat:-2.9234,lng:103.9821},
-  {id:'gitet-sgl',  tipe:'GITET',  nama:'GITET Sungai Lilin',        ultg:'ULTG Betung',   kota:'Musi Banyuasin',lat:-2.7234,lng:104.0543},
+  {id:'ultg-btg',   tipe:'ULTG',   nama:'Kantor ULTG Betung',        ultg:'ULTG Betung',   kota:'Banyuasin',      lat:-2.6432, lng:104.8123},
+  {id:'gitet-btg',  tipe:'GITET',  nama:'GITET Betung',              ultg:'ULTG Betung',   kota:'Banyuasin',      lat:-2.6512, lng:104.8234},
+  {id:'gi-sky',     tipe:'GI',     nama:'GI Sekayu',                 ultg:'ULTG Betung',   kota:'Musi Banyuasin', lat:-2.9234, lng:103.9821},
+  {id:'gitet-sgl',  tipe:'GITET',  nama:'GITET Sungai Lilin',        ultg:'ULTG Betung',   kota:'Musi Banyuasin', lat:-2.7234, lng:104.0543},
   // ULTG Boombaru
-  {id:'ultg-bmb',   tipe:'ULTG',   nama:'Kantor ULTG Boombaru',      ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9376, lng:104.7823},
-  {id:'gi-sjr',     tipe:'GI',     nama:'GI Sungai Juaro',           ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9234, lng:104.7734},
-  {id:'gi-sdp',     tipe:'GI',     nama:'GI Seduduk Putih',          ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9412, lng:104.7512},
-  {id:'gi-bmb',     tipe:'GI',     nama:'GI Boombaru',               ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9476, lng:104.7843},
-  {id:'gi-tlr',     tipe:'GI',     nama:'GI Talang Ratu',            ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9712, lng:104.7234},
-  {id:'gi-bsg',     tipe:'GI',     nama:'GI Bukit Siguntang',        ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9823, lng:104.7123},
-  {id:'gis-ktt',    tipe:'GIS',    nama:'GIS Kota Timur',            ultg:'ULTG Boombaru', kota:'Palembang', lat:-2.9312, lng:104.7934},
+  {id:'ultg-bmb',   tipe:'ULTG',   nama:'Kantor ULTG Boombaru',      ultg:'ULTG Boombaru', kota:'Palembang',      lat:-2.9376, lng:104.7823},
+  {id:'gi-sjr',     tipe:'GI',     nama:'GI Sungai Juaro',           ultg:'ULTG Boombaru', kota:'Palembang',      lat:-2.9234, lng:104.7734},
+  {id:'gi-sdp',     tipe:'GI',     nama:'GI Seduduk Putih',          ultg:'ULTG Boombaru', kota:'Palembang',      lat:-2.9412, lng:104.7512},
+  {id:'gi-bmb',     tipe:'GI',     nama:'GI Boombaru',               ultg:'ULTG Boombaru', kota:'Palembang',      lat:-2.9476, lng:104.7843},
+  {id:'gi-tlr',     tipe:'GI',     nama:'GI Talang Ratu',            ultg:'ULTG Boombaru', kota:'Palembang',      lat:-2.9712, lng:104.7234},
+  {id:'gi-bsg',     tipe:'GI',     nama:'GI Bukit Siguntang',        ultg:'ULTG Boombaru', kota:'Palembang',      lat:-2.9823, lng:104.7123},
+  {id:'gis-ktt',    tipe:'GIS',    nama:'GIS Kota Timur',            ultg:'ULTG Boombaru', kota:'Palembang',      lat:-2.9312, lng:104.7934},
+  // ULTG Bangka
+  {id:'ultg-bka',   tipe:'ULTG',   nama:'Kantor ULTG Bangka',        ultg:'ULTG Bangka',   kota:'Pangkalpinang',  lat:-2.1101, lng:106.1138},
+  {id:'gi-pkp',     tipe:'GI',     nama:'GI Pangkalpinang',          ultg:'ULTG Bangka',   kota:'Pangkalpinang',  lat:-2.1317, lng:106.1164},
+  {id:'gi-aay',     tipe:'GI',     nama:'GI Airanyir',               ultg:'ULTG Bangka',   kota:'Bangka Tengah',  lat:-2.0543, lng:106.1876},
+  {id:'gi-slt',     tipe:'GI',     nama:'GI Sungailiat',             ultg:'ULTG Bangka',   kota:'Bangka',         lat:-1.8612, lng:106.1231},
+  {id:'gi-klp',     tipe:'GI',     nama:'GI Kelapa',                 ultg:'ULTG Bangka',   kota:'Bangka Barat',   lat:-1.6723, lng:105.7543},
+  {id:'gi-mtk',     tipe:'GI',     nama:'GI Muntok',                 ultg:'ULTG Bangka',   kota:'Bangka Barat',   lat:-2.0651, lng:105.1738},
+  {id:'gi-kba',     tipe:'GI',     nama:'GI Koba',                   ultg:'ULTG Bangka',   kota:'Bangka Tengah',  lat:-2.7021, lng:106.4823},
+  {id:'gi-tbl',     tipe:'GI',     nama:'GI Toboali',                ultg:'ULTG Bangka',   kota:'Bangka Selatan', lat:-3.0143, lng:106.5234},
+  // ULTG Belitung
+  {id:'ultg-blt',   tipe:'ULTG',   nama:'Kantor ULTG Belitung',      ultg:'ULTG Belitung', kota:'Belitung',       lat:-2.7312, lng:107.6387},
+  {id:'gi-sge',     tipe:'GI',     nama:'GI Suge',                   ultg:'ULTG Belitung', kota:'Belitung',       lat:-2.7823, lng:107.6234},
+  {id:'gi-dkg',     tipe:'GI',     nama:'GI Dukong',                 ultg:'ULTG Belitung', kota:'Belitung',       lat:-2.7123, lng:107.7234},
+  {id:'gi-mgg',     tipe:'GI',     nama:'GI Manggar',                ultg:'ULTG Belitung', kota:'Belitung Timur', lat:-2.8843, lng:108.2712},
 ];
 
-const ULTG_LIST   =['Semua','ULTG Keramasan','ULTG Borang','ULTG Betung','ULTG Boombaru'];
-const ULTG_WARNA  ={'ULTG Keramasan':'#1e90ff','ULTG Borang':'#10b981','ULTG Betung':'#f59e0b','ULTG Boombaru':'#e07050','UPT':'#a78bfa'};
+const ULTG_LIST   =['Semua','ULTG Keramasan','ULTG Borang','ULTG Betung','ULTG Boombaru','ULTG Bangka','ULTG Belitung'];
+const ULTG_WARNA  ={'ULTG Keramasan':'#1e90ff','ULTG Borang':'#10b981','ULTG Betung':'#f59e0b','ULTG Boombaru':'#e07050','ULTG Bangka':'#06b6d4','ULTG Belitung':'#ec4899','UPT':'#a78bfa'};
 
 // ── Jenis & Constants ─────────────────────────────────────────
 const JENIS=[
@@ -770,7 +784,7 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
   useEffect(()=>{
     if(leafRef.current)return;
     const L=window.L;
-    const map=L.map('leaflet-map',{center:[-2.98,104.76],zoom:11});
+    const map=L.map('leaflet-map',{center:[-2.6,106.2],zoom:7});
 
     // Default tile: dark
     const tile=L.tileLayer(MAP_TILES.dark.url,{
@@ -799,17 +813,14 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
           <div class="pop-row"><span class="pop-lbl">Volume/bulan</span><span class="pop-val">${fmtKg(stat.total)}</span></div>
           <div class="pop-row"><span class="pop-lbl">Organik</span><span class="pop-val">${fmtKg(stat.org||0)}</span></div>
           <div class="pop-row"><span class="pop-lbl">Anorganik</span><span class="pop-val">${fmtKg(stat.anorg||0)}</span></div>
-          <button class="pop-btn" onclick="window._inputLok&&window._inputLok('${lok.id}')">📥 Input Data Sampah</button>
+          <div style="margin-top:8px;font-size:9px;color:#888;text-align:center;font-style:italic">Panel input muncul di bawah peta ↓</div>
         </div>
       `,{maxWidth:240});
       marker.on('click',()=>setSelectedId(lok.id));
       markersRef.current[lok.id]=marker;
     });
 
-    window._inputLok=(id)=>{
-      const l=DATA_LOKASI.find(x=>x.id===id);
-      if(l)onInputClick(l);
-    };
+    // Input sekarang via floating panel React (bukan popup onclick)
     return()=>{if(leafRef.current){leafRef.current.remove();leafRef.current=null;}};
   },[]);
 
@@ -851,6 +862,52 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
     });
   },[filterULTG]);
 
+  // ── Update isi popup saat data sampahLokasi berubah ───────────
+  useEffect(()=>{
+    if(!leafRef.current)return;
+    DATA_LOKASI.forEach(lok=>{
+      const m=markersRef.current[lok.id];
+      if(!m)return;
+      const d=sampahLokasi[lok.id]||[];
+      // Kumulatif seluruh data yang pernah diinput
+      const totOrg   = d.reduce((s,e)=>s+sumGrup(e,'organik'),0);
+      const totAnorg = d.reduce((s,e)=>s+sumGrup(e,'anorganik'),0);
+      const totAll   = totOrg+totAnorg;
+      const nBulan   = d.length;
+      const adaData  = nBulan>0;
+
+      m.setPopupContent(`
+        <div class="pop-wrap">
+          <div class="pop-name">${iconTipe(lok.tipe)} ${lok.nama}</div>
+          <div class="pop-sub">${lok.kota} &nbsp;·&nbsp; ${lok.tipe} &nbsp;·&nbsp; ${lok.ultg}</div>
+          ${adaData ? `
+            <div class="pop-row">
+              <span class="pop-lbl">♻ Total Kumulatif</span>
+              <span class="pop-val" style="color:#7ed89a;font-size:13px">${fmtKg(totAll)}</span>
+            </div>
+            <div class="pop-row"><span class="pop-lbl">&nbsp;🌿 Organik</span><span class="pop-val">${fmtKg(totOrg)}</span></div>
+            <div class="pop-row"><span class="pop-lbl">&nbsp;🧴 Anorganik</span><span class="pop-val">${fmtKg(totAnorg)}</span></div>
+            <div style="height:1px;background:rgba(255,255,255,.08);margin:7px 0"></div>
+            <div class="pop-row">
+              <span class="pop-lbl" style="color:#888">Data tercatat</span>
+              <span class="pop-val" style="color:#888">${nBulan} bulan</span>
+            </div>
+          ` : `
+            <div style="text-align:center;padding:10px 0;font-size:10px;color:#666">
+              Belum ada data yang diinput
+            </div>
+          `}
+          <div style="margin-top:8px;font-size:9px;color:#555;text-align:center;font-style:italic">
+            Klik marker → panel input muncul di bawah ↓
+          </div>
+        </div>
+      `);
+    });
+  },[sampahLokasi]);
+
+  const activeLok = selectedId ? DATA_LOKASI.find(l=>l.id===selectedId) : null;
+  const warnaTipeAktif = activeLok ? warnaTipe(activeLok.tipe) : 'var(--g1)';
+
   return(
     <div className="content-map">
       <div id="leaflet-map"/>
@@ -884,6 +941,132 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
         ))}
       </div>
 
+      {/* ── Panel info lokasi + tombol input (muncul saat marker diklik) ── */}
+      {activeLok&&(()=>{
+        const d=sampahLokasi[activeLok.id]||[];
+        const grandOrg  =d.reduce((s,e)=>s+sumGrup(e,'organik'),0);
+        const grandAnorg=d.reduce((s,e)=>s+sumGrup(e,'anorganik'),0);
+        const grandTotal=grandOrg+grandAnorg;
+        const nBulan=d.length;
+        return(
+        <div style={{
+          position:'absolute',bottom:20,left:'50%',transform:'translateX(-50%)',
+          zIndex:800,minWidth:320,maxWidth:420,
+          background:'var(--card)',
+          border:`1px solid ${warnaTipeAktif}55`,
+          borderLeft:`4px solid ${warnaTipeAktif}`,
+          borderRadius:12,
+          padding:'12px 14px',
+          boxShadow:'0 6px 24px rgba(0,0,0,.55)',
+          backdropFilter:'blur(8px)',
+          animation:'su .2s',
+        }}>
+          {/* Baris atas: ikon + nama + tutup */}
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            <div style={{
+              width:36,height:36,
+              borderRadius:activeLok.tipe==='GI'||activeLok.tipe==='GIS'||activeLok.tipe==='GITET'?'50%':'9px',
+              background:warnaTipeAktif,border:'2px solid rgba(255,255,255,.25)',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:15,flexShrink:0,
+            }}>{iconTipe(activeLok.tipe)}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:700,color:'var(--white)',
+                whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
+                {activeLok.nama}
+              </div>
+              <div style={{fontSize:10,color:'var(--muted)',marginTop:1}}>
+                {activeLok.ultg} &nbsp;·&nbsp; {activeLok.kota}
+              </div>
+            </div>
+            <button onClick={()=>setSelectedId(null)} style={{
+              background:'transparent',color:'var(--muted)',border:'1px solid var(--border)',
+              borderRadius:6,padding:'3px 8px',fontFamily:"'DM Sans',sans-serif",
+              fontSize:11,cursor:'pointer',flexShrink:0,
+            }}>✕</button>
+          </div>
+
+          {/* Data volume kumulatif */}
+          {nBulan>0?(
+            <div style={{marginBottom:10}}>
+              {/* Kotak utama total kumulatif */}
+              <div style={{
+                background:'rgba(93,189,106,.1)',border:'1px solid rgba(93,189,106,.25)',
+                borderRadius:8,padding:'8px 12px',marginBottom:6,
+                display:'flex',alignItems:'center',justifyContent:'space-between',
+              }}>
+                <div style={{fontSize:10,color:'var(--muted)'}}>♻ Total Kumulatif</div>
+                <div style={{fontSize:16,fontWeight:800,color:'var(--g1)',fontFamily:"'Syne',sans-serif"}}>
+                  {fmtKg(grandTotal)}
+                </div>
+              </div>
+              {/* Organik & Anorganik */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                {[
+                  {l:'🌿 Organik',v:fmtKg(grandOrg),c:'var(--c-daun)'},
+                  {l:'🧴 Anorganik',v:fmtKg(grandAnorg),c:'var(--c-kertas)'},
+                ].map(x=>(
+                  <div key={x.l} style={{
+                    background:'var(--bg)',borderRadius:7,
+                    padding:'6px 10px',
+                    border:'1px solid var(--border)',
+                  }}>
+                    <div style={{fontSize:11,fontWeight:700,color:x.c}}>{x.v}</div>
+                    <div style={{fontSize:9,color:'var(--muted)',marginTop:1}}>{x.l}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{fontSize:9,color:'var(--muted)',marginTop:5,textAlign:'right'}}>
+                dari {nBulan} bulan pencatatan
+              </div>
+            </div>
+          ):(
+            <div style={{
+              textAlign:'center',padding:'8px',marginBottom:10,
+              background:'var(--bg)',borderRadius:7,
+              fontSize:10,color:'var(--muted)',
+              border:'1px solid var(--border)',
+            }}>
+              Belum ada data — mulai input sekarang
+            </div>
+          )}
+
+          {/* Tombol input */}
+          <button
+            onClick={()=>onInputClick(activeLok)}
+            style={{
+              width:'100%',background:'var(--g1)',color:'#0a1a0b',border:'none',
+              borderRadius:7,padding:'7px 14px',
+              fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,
+              cursor:'pointer',display:'flex',alignItems:'center',
+              justifyContent:'center',gap:6,
+              transition:'background .15s',
+            }}
+            onMouseOver={e=>e.currentTarget.style.background='#70d47e'}
+            onMouseOut={e=>e.currentTarget.style.background='var(--g1)'}
+          >
+            📥 Input Data Sampah
+          </button>
+        </div>
+        );
+      })()}
+
+      {/* ── Hint saat belum ada lokasi dipilih ── */}
+      {!activeLok&&(
+        <div style={{
+          position:'absolute',bottom:20,left:'50%',transform:'translateX(-50%)',
+          zIndex:800,
+          background:'rgba(13,27,18,.75)',
+          border:'1px solid var(--border)',
+          borderRadius:20,padding:'6px 14px',
+          fontSize:10,color:'var(--muted)',
+          pointerEvents:'none',
+          backdropFilter:'blur(4px)',
+        }}>
+          🗺 Klik marker untuk memilih lokasi & input data
+        </div>
+      )}
+
       {/* ── Legenda ── */}
       <div className="map-legend">
         <div style={{fontSize:8,fontWeight:700,color:'var(--muted)',letterSpacing:1,textTransform:'uppercase',marginBottom:6}}>LEGENDA</div>
@@ -892,7 +1075,9 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
           {c:'#f59e0b',r:false,l:'ULTG'},
           {c:'#1e90ff',r:true, l:'GI'},
           {c:'#8b5cf6',r:true, l:'GIS'},
-          {c:'#ec4899',r:true, l:'GITET'},
+          {c:'#f472b6',r:true, l:'GITET'},
+          {c:'#06b6d4',r:false,l:'ULTG Bangka'},
+          {c:'#ec4899',r:false,l:'ULTG Belitung'},
         ].map(x=>(
           <div key={x.l} className="leg-i">
             <div style={{width:9,height:9,background:x.c,borderRadius:x.r?'50%':'3px',border:'1.5px solid rgba(255,255,255,.3)',flexShrink:0}}/>
@@ -908,8 +1093,15 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
 // MODAL INPUT SAMPAH PER LOKASI
 // ══════════════════════════════════════════════════════════════
 function ModalInput({lok,sampahLokasi,setSampahLokasi,addRecord,showToast,onClose}){
-  const [bulan,setBulan]=useState(TODAY.getMonth());
-  const [tahun,setTahun]=useState(TODAY.getFullYear());
+  // Tanggal hari ini sebagai default
+  const todayStr=`${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-${String(TODAY.getDate()).padStart(2,'0')}`;
+  const [tanggal,setTanggal]=useState(todayStr);
+
+  // Turunkan bulan & tahun dari tanggal yang dipilih (untuk lookup data existing)
+  const tglDate=new Date(tanggal+'T00:00:00');
+  const bulan=tglDate.getMonth();
+  const tahun=tglDate.getFullYear();
+
   const existing=useMemo(()=>{
     const d=sampahLokasi[lok.id]||[];
     return d.find(e=>e.bulan===bulan&&e.tahun===tahun)||{};
@@ -926,13 +1118,12 @@ function ModalInput({lok,sampahLokasi,setSampahLokasi,addRecord,showToast,onClos
 
   const [mSaving,setMSaving]=useState(false);
   async function save(){
+    if(!tanggal){showToast('⚠️ Pilih tanggal terlebih dahulu');return;}
     if(sumAll(form)===0){showToast('⚠️ Isi minimal satu jenis sampah');return;}
     setMSaving(true);
-    // Buat tanggal dari bulan/tahun (gunakan tgl 1)
-    const tgl=`${tahun}-${String(bulan+1).padStart(2,'0')}-01`;
     const entry={
       ...form,
-      tanggal:tgl,
+      tanggal,                          // tanggal persis dari date picker
       lokasiId:lok.id,
       lokasiNama:lok.nama,
       lokasiULTG:lok.ultg,
@@ -968,18 +1159,38 @@ function ModalInput({lok,sampahLokasi,setSampahLokasi,addRecord,showToast,onClos
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
-        {/* Pilih periode */}
-        <div className="g2" style={{marginBottom:12}}>
-          <div><label>Bulan</label>
-            <select value={bulan} onChange={e=>setBulan(Number(e.target.value))}>
-              {BULAN_FULL.map((b,i)=><option key={i} value={i}>{b}</option>)}
-            </select>
-          </div>
-          <div><label>Tahun</label>
-            <select value={tahun} onChange={e=>setTahun(Number(e.target.value))}>
-              {TAHUN_OPT.map(y=><option key={y}>{y}</option>)}
-            </select>
-          </div>
+        {/* Tanggal pencatatan */}
+        <div style={{marginBottom:12}}>
+          <label style={{
+            display:'block',fontSize:9,fontWeight:700,
+            color:'var(--muted)',letterSpacing:1,
+            textTransform:'uppercase',marginBottom:5,
+          }}>📅 Tanggal Pencatatan</label>
+          <input
+            type="date"
+            value={tanggal}
+            onChange={e=>setTanggal(e.target.value)}
+            max={todayStr}
+            style={{
+              width:'100%',
+              background:'var(--bg)',
+              border:'1px solid var(--border)',
+              borderRadius:8,
+              color:'var(--text)',
+              padding:'8px 11px',
+              fontFamily:"'DM Sans',sans-serif",
+              fontSize:13,
+              fontWeight:600,
+              outline:'none',
+              cursor:'pointer',
+              colorScheme:'dark',
+            }}
+          />
+          {tanggal&&(
+            <div style={{fontSize:10,color:'var(--muted)',marginTop:4,paddingLeft:2}}>
+              {new Date(tanggal+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+            </div>
+          )}
         </div>
 
         {/* Organik */}
@@ -1196,19 +1407,345 @@ function PageData({records,onDelete}){
 }
 
 // PAGE LAPORAN
+// ── Donut Chart SVG ─────────────────────────────────────────────
+function DonutChart({segments,size=130,thick=18,label,sublabel}){
+  const R=size/2-thick/2;
+  const C=2*Math.PI*R;
+  let off=0;
+  const total=segments.reduce((s,x)=>s+x.val,0);
+  const arcs=segments.map(s=>{
+    const len=total>0?(s.val/total)*C:0;
+    const el={...s,dashArray:`${len} ${C}`,dashOffset:-off};
+    off+=len;
+    return el;
+  });
+  return(
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{overflow:'visible'}}>
+      <circle cx={size/2} cy={size/2} r={R} fill="none"
+        stroke="rgba(255,255,255,.06)" strokeWidth={thick}/>
+      {arcs.map((a,i)=>(
+        <circle key={i} cx={size/2} cy={size/2} r={R} fill="none"
+          stroke={a.color} strokeWidth={thick}
+          strokeDasharray={a.dashArray}
+          strokeDashoffset={a.dashOffset}
+          strokeLinecap="butt"
+          transform={`rotate(-90 ${size/2} ${size/2})`}
+          style={{transition:'stroke-dasharray .6s ease'}}
+        />
+      ))}
+      {label&&<text x={size/2} y={size/2-3} textAnchor="middle"
+        fill="white" fontSize={size>120?15:12} fontWeight="800"
+        fontFamily="Syne,sans-serif">{label}</text>}
+      {sublabel&&<text x={size/2} y={size/2+13} textAnchor="middle"
+        fill="#666" fontSize={9}>{sublabel}</text>}
+    </svg>
+  );
+}
+
+// ── Bar Chart SVG ─────────────────────────────────────────────
+function BarChart({data,h=110}){
+  const maxV=Math.max(...data.map(d=>d.segs.reduce((s,x)=>s+x.v,0)),1);
+  return(
+    <div style={{display:'flex',alignItems:'flex-end',gap:3,height:h+30,paddingTop:6}}>
+      {data.map((d,i)=>{
+        const tot=d.segs.reduce((s,x)=>s+x.v,0);
+        return(
+          <div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+            {tot>0&&<span style={{fontSize:7,color:'var(--muted)',textAlign:'center',lineHeight:1.2}}>
+              {fmt(tot)}
+            </span>}
+            <div style={{
+              width:'100%',display:'flex',flexDirection:'column-reverse',
+              height:h,justifyContent:'flex-start',
+            }}>
+              {d.segs.map((s,j)=>(
+                <div key={j} style={{
+                  width:'100%',
+                  height:Math.max((s.v/maxV)*h,s.v>0?2:0),
+                  background:s.c,
+                  borderRadius: j===d.segs.length-1?'4px 4px 0 0':'0',
+                  transition:'height .5s ease',
+                }}/>
+              ))}
+            </div>
+            <div style={{
+              fontSize:d.label.length>6?6:7,
+              color:'var(--muted)',textAlign:'center',lineHeight:1.3,
+              wordBreak:'break-word',maxWidth:32,
+            }}>{d.label}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function PageLaporan({records}){
-  const [b,setB]=useState(TODAY.getMonth());const[y,setY]=useState(TODAY.getFullYear());
-  const f=records.filter(r=>{const d=new Date(r.tanggal);return d.getMonth()===b&&d.getFullYear()===y;});
-  const tJ={};JENIS.forEach(j=>{tJ[j.key]=f.reduce((s,r)=>s+vNum(r[j.key]),0);});
-  const tO=JENIS_ORG.reduce((s,j)=>s+tJ[j.key],0),tA=JENIS_ANORG.reduce((s,j)=>s+tJ[j.key],0),tot=tO+tA,avg=f.length?tot/f.length:0;
-  const bP={Komposting:0,'Bank Sampah':0,TPA:0};f.forEach(r=>JENIS.forEach(j=>{const p=r[penKey(j.key)]||'Komposting';bP[p]=(bP[p]||0)+vNum(r[j.key]);}));
-  const l7=[...f].slice(-7),mB=Math.max(...l7.map(r=>sumAll(r)),1);
-  return(<><MonthSel bulan={b} setBulan={setB} tahun={y} setTahun={setY}/>
-    <div className="sec-lbl">Ringkasan — {BULAN_FULL[b]} {y}</div>
-    <div className="g5"><St label="Total Sampah" value={fmt(tot)} unit="kg" color="var(--g1)"/><St label="Rata-rata/Hari" value={fmt(avg)} unit="kg" color="var(--g2)"/><St label="Hari Catat" value={f.length} unit="hari" color="#5aa8d6"/><St label="Organik" value={fmt(tO)} unit="kg" color="var(--c-makan)"/><St label="Ke TPA" value={fmt(bP.TPA)} unit="kg" color="var(--g3)"/></div>
-    <div className="g2"><div className="card"><div className="sec-lbl">🌿 Organik</div>{JENIS_ORG.map(j=><Pr key={j.key} label={j.label} val={tJ[j.key]} total={tO} color={j.color} icon={j.icon}/>)}</div><div className="card"><div className="sec-lbl">🧴 Anorganik</div>{JENIS_ANORG.map(j=><Pr key={j.key} label={j.label} val={tJ[j.key]} total={tA} color={j.color} icon={j.icon}/>)}</div></div>
-    <div className="g2"><div className="card"><div className="sec-lbl">Komposisi</div><Pr label="Organik" val={tO} total={tot} color="var(--g1)" icon="🌿"/><Pr label="Anorganik" val={tA} total={tot} color="var(--g2)" icon="🧴"/></div><div className="card"><div className="sec-lbl">Pengelolaan</div><Pr label="Komposting" val={bP.Komposting} total={tot} color="var(--g1)" icon="♻"/><Pr label="Bank Sampah" val={bP['Bank Sampah']} total={tot} color="#5aa8d6" icon="🏦"/><Pr label="TPA" val={bP.TPA} total={tot} color="var(--g3)" icon="🗑"/></div></div>
-    {l7.length>0&&(<div className="card"><div className="sec-lbl">Tren 7 Terakhir</div><div style={{display:'flex',alignItems:'flex-end',gap:4,height:75,paddingTop:6}}>{l7.map((r,i)=>{const o=sumGrup(r,'organik'),a=sumGrup(r,'anorganik'),t=o+a;return(<div key={i} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2}}><span style={{fontSize:7,color:'var(--muted)'}}>{fmt(t)}</span><div style={{display:'flex',flexDirection:'column',justifyContent:'flex-end',height:56,gap:1,width:'100%'}}><div style={{height:Math.max((o/mB)*56,2),background:'var(--g1)',borderRadius:'2px 2px 0 0',width:'100%'}}/><div style={{height:Math.max((a/mB)*56,2),background:'var(--g2)',borderRadius:'2px 2px 0 0',width:'100%'}}/></div><span style={{fontSize:6,color:'var(--muted)'}}>{new Date(r.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}</span></div>);})}</div></div>)}</>);
+  const [b,setB]=useState(TODAY.getMonth());
+  const [y,setY]=useState(TODAY.getFullYear());
+  const f=useMemo(()=>records.filter(r=>{
+    const d=new Date(r.tanggal);return d.getMonth()===b&&d.getFullYear()===y;
+  }),[records,b,y]);
+
+  const tJ=useMemo(()=>{
+    const o={};JENIS.forEach(j=>{o[j.key]=f.reduce((s,r)=>s+vNum(r[j.key]),0);});return o;
+  },[f]);
+  const tO=JENIS_ORG.reduce((s,j)=>s+tJ[j.key],0);
+  const tA=JENIS_ANORG.reduce((s,j)=>s+tJ[j.key],0);
+  const tot=tO+tA;
+  const avg=f.length?tot/f.length:0;
+  const bP={Komposting:0,'Bank Sampah':0,TPA:0};
+  f.forEach(r=>JENIS.forEach(j=>{
+    const p=r[penKey(j.key)]||'Komposting';bP[p]=(bP[p]||0)+vNum(r[j.key]);
+  }));
+  const pctTPA=tot>0?((bP.TPA/tot)*100):0;
+  const dailySorted=useMemo(()=>[...f].sort((a,x)=>a.tanggal.localeCompare(x.tanggal)),[f]);
+
+  // Per-ULTG breakdown
+  const byULTG=useMemo(()=>{
+    const m={};
+    f.forEach(r=>{
+      const u=r.lokasiULTG||'Lainnya';
+      if(!m[u])m[u]={ultg:u,org:0,anorg:0};
+      m[u].org+=sumGrup(r,'organik');
+      m[u].anorg+=sumGrup(r,'anorganik');
+    });
+    return Object.values(m).sort((a,b)=>(b.org+b.anorg)-(a.org+a.anorg));
+  },[f]);
+
+  if(f.length===0) return(
+    <>
+      <MonthSel bulan={b} setBulan={setB} tahun={y} setTahun={setY}/>
+      <div className="card" style={{textAlign:'center',padding:'40px 20px'}}>
+        <div style={{fontSize:40,marginBottom:12}}>📊</div>
+        <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'var(--white)',marginBottom:6}}>
+          Belum Ada Data
+        </div>
+        <div style={{fontSize:11,color:'var(--muted)'}}>
+          Tidak ada data untuk {BULAN_FULL[b]} {y}.<br/>
+          Silakan input data di menu 📥 Input Harian.
+        </div>
+      </div>
+    </>
+  );
+
+  return(<>
+    <MonthSel bulan={b} setBulan={setB} tahun={y} setTahun={setY}/>
+
+    {/* ── 1. Hero Stats ── */}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:8}}>
+      {[
+        {icon:'⚖️', label:'Total Sampah', val:fmtKg(tot), color:'var(--g1)',
+         bg:'rgba(93,189,106,.12)', border:'rgba(93,189,106,.3)'},
+        {icon:'🌿', label:'Organik', val:fmtKg(tO), color:'#4ade80',
+         bg:'rgba(74,222,128,.08)', border:'rgba(74,222,128,.25)'},
+        {icon:'🧴', label:'Anorganik', val:fmtKg(tA), color:'var(--g2)',
+         bg:'rgba(201,168,76,.08)', border:'rgba(201,168,76,.25)'},
+      ].map(x=>(
+        <div key={x.label} style={{
+          background:x.bg, border:`1px solid ${x.border}`,
+          borderRadius:12, padding:'12px 10px', textAlign:'center',
+        }}>
+          <div style={{fontSize:20,marginBottom:4}}>{x.icon}</div>
+          <div style={{fontSize:14,fontWeight:800,color:x.color,
+            fontFamily:'Syne,sans-serif',lineHeight:1.1}}>{x.val}</div>
+          <div style={{fontSize:9,color:'var(--muted)',marginTop:3,fontWeight:600,
+            textTransform:'uppercase',letterSpacing:.5}}>{x.label}</div>
+        </div>
+      ))}
+    </div>
+
+    {/* Stat strip */}
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginBottom:10}}>
+      {[
+        {l:'Jumlah Input', v:f.length+' entri', c:'#7ab8ff'},
+        {l:'Rata-rata/Input', v:fmtKg(avg), c:'var(--muted)'},
+        {l:'% ke TPA', v:pctTPA.toFixed(1)+'%',
+         c:pctTPA>30?'var(--g3)':pctTPA>15?'var(--g2)':'var(--g1)'},
+      ].map(x=>(
+        <div key={x.l} style={{
+          background:'var(--surface)',border:'1px solid var(--border)',
+          borderRadius:8,padding:'7px 10px',
+        }}>
+          <div style={{fontSize:12,fontWeight:700,color:x.c}}>{x.v}</div>
+          <div style={{fontSize:9,color:'var(--muted)',marginTop:1}}>{x.l}</div>
+        </div>
+      ))}
+    </div>
+
+    {/* ── 2. Donut Charts Row ── */}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
+
+      {/* Donut: Komposisi */}
+      <div className="card">
+        <div className="card-title" style={{marginBottom:12}}>🥧 Komposisi</div>
+        <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'center'}}>
+          <DonutChart
+            size={110} thick={16}
+            label={fmt(tot)} sublabel="kg"
+            segments={[
+              {val:tO, color:'#4ade80'},
+              {val:tA, color:'#f59e0b'},
+            ]}
+          />
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {[
+              {c:'#4ade80',l:'🌿 Organik',v:tO,p:tot>0?(tO/tot*100).toFixed(1):0},
+              {c:'#f59e0b',l:'🧴 Anorganik',v:tA,p:tot>0?(tA/tot*100).toFixed(1):0},
+            ].map(x=>(
+              <div key={x.l}>
+                <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:x.c,flexShrink:0}}/>
+                  <span style={{fontSize:10,color:'var(--muted)'}}>{x.l}</span>
+                </div>
+                <div style={{fontSize:13,fontWeight:700,color:x.c,paddingLeft:13}}>
+                  {fmtKg(x.v)}
+                </div>
+                <div style={{fontSize:9,color:'#555',paddingLeft:13}}>{x.p}%</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Donut: Pengelolaan */}
+      <div className="card">
+        <div className="card-title" style={{marginBottom:12}}>♻ Pengelolaan</div>
+        <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'center'}}>
+          <DonutChart
+            size={110} thick={16}
+            label={pctTPA.toFixed(0)+'%'} sublabel="ke TPA"
+            segments={[
+              {val:bP.Komposting, color:'#4ade80'},
+              {val:bP['Bank Sampah'], color:'#5aa8d6'},
+              {val:bP.TPA, color:'#e07050'},
+            ]}
+          />
+          <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            {[
+              {c:'#4ade80',icon:'♻',l:'Komposting',v:bP.Komposting},
+              {c:'#5aa8d6',icon:'🏦',l:'Bank Sampah',v:bP['Bank Sampah']},
+              {c:'#e07050',icon:'🗑',l:'TPA',v:bP.TPA},
+            ].map(x=>(
+              <div key={x.l}>
+                <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:2}}>
+                  <div style={{width:8,height:8,borderRadius:2,background:x.c,flexShrink:0}}/>
+                  <span style={{fontSize:10,color:'var(--muted)'}}>{x.icon} {x.l}</span>
+                </div>
+                <div style={{fontSize:12,fontWeight:700,color:x.c,paddingLeft:13}}>
+                  {fmtKg(x.v)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* ── 3. Bar: Per Jenis Sampah ── */}
+    <div className="card" style={{marginBottom:8}}>
+      <div className="card-title" style={{marginBottom:12}}>📊 Volume per Jenis Sampah</div>
+      <BarChart h={100} data={JENIS.map(j=>({
+        label:j.label.replace('/',' /
+').replace('Lain-lain ','Lain
+'),
+        segs:[{v:tJ[j.key],c:j.color}],
+      }))}/>
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:10,justifyContent:'center'}}>
+        {JENIS.map(j=>(
+          <div key={j.key} style={{display:'flex',alignItems:'center',gap:4,fontSize:9}}>
+            <div style={{width:8,height:8,borderRadius:2,background:j.color}}/>
+            <span style={{color:'var(--muted)'}}>{j.icon} {j.label}</span>
+            <span style={{color:j.color,fontWeight:700}}>{fmtKg(tJ[j.key])}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* ── 4. Trend Harian ── */}
+    {dailySorted.length>0&&(
+      <div className="card" style={{marginBottom:8}}>
+        <div className="card-title" style={{marginBottom:4}}>
+          📈 Trend Harian — {BULAN_FULL[b]} {y}
+          <span style={{marginLeft:'auto',fontSize:9,fontWeight:400,color:'var(--muted)'}}>
+            {dailySorted.length} hari pencatatan
+          </span>
+        </div>
+        <div style={{display:'flex',gap:8,marginBottom:8,fontSize:9}}>
+          {[{c:'#4ade80',l:'Organik'},{c:'#f59e0b',l:'Anorganik'}].map(x=>(
+            <div key={x.l} style={{display:'flex',alignItems:'center',gap:4}}>
+              <div style={{width:8,height:8,borderRadius:2,background:x.c}}/>
+              <span style={{color:'var(--muted)'}}>{x.l}</span>
+            </div>
+          ))}
+        </div>
+        <BarChart h={100} data={dailySorted.map(r=>({
+          label:new Date(r.tanggal).getDate().toString(),
+          segs:[
+            {v:sumGrup(r,'organik'),c:'#4ade80'},
+            {v:sumGrup(r,'anorganik'),c:'#f59e0b'},
+          ],
+        }))}/>
+      </div>
+    )}
+
+    {/* ── 5. Per ULTG breakdown ── */}
+    {byULTG.length>1&&(
+      <div className="card">
+        <div className="card-title" style={{marginBottom:12}}>
+          🏢 Kontribusi per ULTG
+        </div>
+        {byULTG.map(u=>{
+          const total=u.org+u.anorg;
+          const pct=tot>0?((total/tot)*100):0;
+          const warna=ULTG_WARNA[u.ultg]||'var(--muted)';
+          return(
+            <div key={u.ultg} style={{marginBottom:10}}>
+              <div style={{display:'flex',justifyContent:'space-between',
+                alignItems:'center',marginBottom:4}}>
+                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                  <div style={{width:10,height:10,borderRadius:3,
+                    background:warna,flexShrink:0}}/>
+                  <span style={{fontSize:11,fontWeight:600,color:'var(--white)'}}>
+                    {u.ultg}
+                  </span>
+                </div>
+                <div style={{display:'flex',gap:8,fontSize:10}}>
+                  <span style={{color:'#4ade80'}}>{fmtKg(u.org)}</span>
+                  <span style={{color:'#f59e0b'}}>{fmtKg(u.anorg)}</span>
+                  <span style={{color:'var(--white)',fontWeight:700}}>{fmtKg(total)}</span>
+                  <span style={{color:'var(--muted)'}}>({pct.toFixed(1)}%)</span>
+                </div>
+              </div>
+              {/* Stacked bar */}
+              <div style={{height:8,borderRadius:4,background:'rgba(255,255,255,.05)',
+                overflow:'hidden',display:'flex'}}>
+                <div style={{
+                  width:`${tot>0?(u.org/tot*100):0}%`,
+                  background:'#4ade80',transition:'width .5s',
+                }}/>
+                <div style={{
+                  width:`${tot>0?(u.anorg/tot*100):0}%`,
+                  background:'#f59e0b',transition:'width .5s',
+                }}/>
+              </div>
+            </div>
+          );
+        })}
+        <div style={{display:'flex',gap:12,marginTop:6,fontSize:9,
+          justifyContent:'flex-end'}}>
+          <div style={{display:'flex',alignItems:'center',gap:4}}>
+            <div style={{width:8,height:8,borderRadius:2,background:'#4ade80'}}/>
+            <span style={{color:'var(--muted)'}}>Organik</span>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:4}}>
+            <div style={{width:8,height:8,borderRadius:2,background:'#f59e0b'}}/>
+            <span style={{color:'var(--muted)'}}>Anorganik</span>
+          </div>
+        </div>
+      </div>
+    )}
+  </>);
 }
 
 // PAGE AI
@@ -1446,7 +1983,7 @@ function App(){
         <div className="sb-stats">
           {[
             {l:'Total Lokasi', v:`${DATA_LOKASI.length}`, c:'var(--white)'},
-            {l:'ULTG',         v:'4',                     c:'var(--ultg)'},
+            {l:'ULTG',         v:'6',                     c:'var(--ultg)'},
             {l:'GI/GIS/GITET', v:`${DATA_LOKASI.filter(l=>l.tipe!=='ULTG'&&l.tipe!=='KANTOR').length}`, c:'var(--pln)'},
             {l:'Data Tersimpan',v:records.length,         c:'var(--g1)'},
           ].map(x=>(

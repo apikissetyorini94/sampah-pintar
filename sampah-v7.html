@@ -39,13 +39,7 @@ input[type=number]::-webkit-inner-spin-button{opacity:.3}
   display:flex;flex-direction:column;
   height:100vh;overflow-y:auto;flex-shrink:0;
 }
-/* Tengah: panel peta/lokasi */
-.map-sidebar{
-  width:260px;min-width:260px;background:var(--surface);
-  border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  height:100vh;overflow:hidden;flex-shrink:0;
-}
+/* map-sidebar dihapus — filter langsung di atas peta */
 /* Kanan: konten utama */
 .main-area{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0}
 
@@ -114,6 +108,37 @@ input[type=number]::-webkit-inner-spin-button{opacity:.3}
 /* ── Content area ── */
 .content{padding:18px 20px;overflow-y:auto;flex:1}
 .content-map{flex:1;position:relative;min-height:0;overflow:hidden}
+/* Filter overlay di atas peta */
+.map-filter-bar{
+  position:absolute;top:10px;left:10px;z-index:900;
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+  pointer-events:all;
+}
+.mf-sel{
+  background:rgba(13,27,18,.88);
+  border:1px solid rgba(93,189,106,.3);
+  border-radius:8px;color:var(--text);
+  padding:6px 10px;font-family:'DM Sans',sans-serif;
+  font-size:11px;font-weight:600;outline:none;
+  cursor:pointer;backdrop-filter:blur(8px);
+  min-width:90px;max-width:140px;
+}
+.mf-search{
+  background:rgba(13,27,18,.88);
+  border:1px solid rgba(93,189,106,.3);
+  border-radius:8px;color:var(--text);
+  padding:6px 10px;font-family:'DM Sans',sans-serif;
+  font-size:11px;outline:none;width:160px;
+  backdrop-filter:blur(8px);
+}
+.mf-search::placeholder{color:rgba(255,255,255,.35)}
+.mf-search:focus,.mf-sel:focus{border-color:rgba(93,189,106,.6);}
+.mf-badge{
+  background:rgba(13,27,18,.88);border:1px solid rgba(93,189,106,.2);
+  border-radius:8px;padding:5px 10px;
+  font-size:10px;font-weight:600;color:var(--g1);
+  backdrop-filter:blur(8px);white-space:nowrap;
+}
 
 /* ── Cards ── */
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:12px}
@@ -278,7 +303,6 @@ tr:hover td{background:rgba(93,189,106,.03)}
 .lok-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.3px}
 
 @media(max-width:900px){
-  .map-sidebar{display:none}
   .g2,.g3{grid-template-columns:1fr}
   .g4,.g5{grid-template-columns:1fr 1fr}
 }
@@ -859,11 +883,21 @@ const MAP_TILES = {
   },
 };
 
-function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,setSelectedId,onInputClick}){
-  const leafRef   = useRef(null);
-  const markersRef= useRef({});
-  const tileRef   = useRef(null);
-  const [mapMode, setMapMode] = useState('dark');
+function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,setFilterULTG,selectedId,setSelectedId,onInputClick}){
+  const leafRef    = useRef(null);
+  const markersRef = useRef({});
+  const tileRef    = useRef(null);
+  const [mapMode,        setMapMode]        = useState('dark');
+  const [filterTipePeta, setFilterTipePeta] = useState('Semua');
+  const [searchPeta,     setSearchPeta]     = useState('');
+
+  const searchResults = useMemo(()=>{
+    if(!searchPeta.trim()) return [];
+    const q=searchPeta.toLowerCase();
+    return DATA_LOKASI.filter(l=>
+      l.nama.toLowerCase().includes(q)||l.kota.toLowerCase().includes(q)
+    );
+  },[searchPeta]);
 
   // Init map sekali
   useEffect(()=>{
@@ -935,17 +969,21 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
     }
   },[selectedId]);
 
-  // Filter visibility
+  // Filter visibility marker peta
   useEffect(()=>{
     if(!leafRef.current)return;
+    const q=searchPeta.toLowerCase().trim();
     DATA_LOKASI.forEach(lok=>{
       const m=markersRef.current[lok.id];
       if(!m)return;
-      const visible=filterULTG==='Semua'||lok.ultg===filterULTG;
+      const byULTG=filterULTG==='Semua'||lok.ultg===filterULTG;
+      const byTipe=filterTipePeta==='Semua'||lok.tipe===filterTipePeta;
+      const bySearch=!q||lok.nama.toLowerCase().includes(q)||lok.kota.toLowerCase().includes(q);
+      const visible=byULTG&&byTipe&&bySearch;
       if(visible){if(!leafRef.current.hasLayer(m))m.addTo(leafRef.current);}
       else{if(leafRef.current.hasLayer(m))m.remove();}
     });
-  },[filterULTG]);
+  },[filterULTG,filterTipePeta,searchPeta]);
 
   // ── Update isi popup saat data sampahLokasi berubah ───────────
   useEffect(()=>{
@@ -996,6 +1034,83 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,selectedId,
   return(
     <div className="content-map">
       <div id="leaflet-map"/>
+
+      {/* ── Filter bar overlay di atas peta ── */}
+      <div className="map-filter-bar">
+        <select className="mf-sel" value={filterULTG} onChange={e=>setFilterULTG(e.target.value)}>
+          {ULTG_LIST.map(u=><option key={u}>{u}</option>)}
+        </select>
+        <select className="mf-sel" value={filterTipePeta} onChange={e=>setFilterTipePeta(e.target.value)}>
+          {['Semua','GI','GIS','GITET','ULTG'].map(t=><option key={t}>{t}</option>)}
+        </select>
+        <input className="mf-search" placeholder="🔍 Cari lokasi..."
+          value={searchPeta} onChange={e=>setSearchPeta(e.target.value)}
+          onKeyDown={e=>{
+            if(e.key==='Enter'&&searchPeta.trim()){
+              const found=DATA_LOKASI.find(l=>
+                l.nama.toLowerCase().includes(searchPeta.toLowerCase())||
+                l.kota.toLowerCase().includes(searchPeta.toLowerCase())
+              );
+              if(found){setSelectedId(found.id);onInputClick&&setSelectedId(found.id);
+                if(leafRef.current)leafRef.current.setView([found.lat,found.lng],13,{animate:true});}
+            }
+            if(e.key==='Escape')setSearchPeta('');
+          }}
+        />
+        {(filterULTG!=='Semua'||filterTipePeta!=='Semua'||searchPeta)&&(
+          <div className="mf-badge" style={{cursor:'pointer'}}
+            onClick={()=>{setFilterULTG('Semua');setFilterTipePeta('Semua');setSearchPeta('');}}>
+            ✕ Reset
+          </div>
+        )}
+        {searchResults.length>0&&(
+          <div className="mf-badge">{searchResults.length} hasil</div>
+        )}
+      </div>
+
+      {/* Dropdown hasil pencarian */}
+      {searchPeta.trim()&&searchResults.length>0&&(
+        <div style={{
+          position:'absolute',top:48,left:10,zIndex:901,
+          background:'rgba(13,27,18,.96)',border:'1px solid rgba(93,189,106,.25)',
+          borderRadius:10,overflow:'hidden',minWidth:220,maxWidth:280,
+          boxShadow:'0 8px 24px rgba(0,0,0,.5)',backdropFilter:'blur(8px)',
+        }}>
+          {searchResults.slice(0,8).map(lok=>{
+            const mc=ULTG_WARNA[lok.ultg]||warnaTipe(lok.tipe);
+            return(
+              <div key={lok.id}
+                onClick={()=>{
+                  setSelectedId(lok.id);
+                  setSearchPeta('');
+                  if(leafRef.current)leafRef.current.setView([lok.lat,lok.lng],14,{animate:true});
+                }}
+                style={{
+                  display:'flex',gap:8,alignItems:'center',
+                  padding:'8px 12px',cursor:'pointer',
+                  borderBottom:'1px solid rgba(255,255,255,.05)',
+                  transition:'background .1s',
+                }}
+                onMouseOver={e=>e.currentTarget.style.background='rgba(93,189,106,.1)'}
+                onMouseOut={e=>e.currentTarget.style.background='transparent'}
+              >
+                <div style={{width:8,height:8,borderRadius:lok.tipe==='GI'||lok.tipe==='GIS'||lok.tipe==='GITET'?'50%':'3px',
+                  background:mc,flexShrink:0}}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:11,fontWeight:600,color:'var(--white)',
+                    overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lok.nama}</div>
+                  <div style={{fontSize:9,color:'var(--muted)'}}>{lok.kota} · <span style={{color:mc}}>{lok.tipe}</span></div>
+                </div>
+              </div>
+            );
+          })}
+          {searchResults.length>8&&(
+            <div style={{padding:'6px 12px',fontSize:9,color:'var(--muted)',textAlign:'center'}}>
+              +{searchResults.length-8} lokasi lainnya
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Toggle Normal / Dark / Satelit ── */}
       <div style={{
@@ -2388,16 +2503,7 @@ function App(){
         </div>
       </div>
 
-      {/* KOLOM 2: Map sidebar */}
-      <MapSidebar
-        sampahLokasi={sampahLok}
-        filterULTG={filterULTG}
-        setFilterULTG={setFilterULTG}
-        selectedId={selectedId}
-        setSelectedId={setSelectedId}
-        onFlyTo={onFlyTo}
-        onInputClick={openInput}
-      />
+      {/* MapSidebar dihapus — filter langsung di atas peta */}
 
       {/* KOLOM 3: Konten utama */}
       <div className="main-area">
@@ -2412,6 +2518,7 @@ function App(){
               setSampahLokasi={setSampahLok}
               showToast={showToast}
               filterULTG={filterULTG}
+              setFilterULTG={setFilterULTG}
               selectedId={selectedId}
               setSelectedId={setSelectedId}
               onInputClick={openInput}

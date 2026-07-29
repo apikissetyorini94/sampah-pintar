@@ -363,64 +363,94 @@ const SUPA_URL = 'https://njsiawaxcrxfnduxwnnp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5qc2lhd2F4Y3J4Zm5kdXh3bm5wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NTU2MDksImV4cCI6MjA5MjAzMTYwOX0.AlLwyRysfIkLeym1ShKAGGqJtj8RGxEYec3yB0Oy1V8';
 const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 
-// ── DB helpers ─────────────────────────────────────────────────
-// Load semua records dari Supabase
-async function dbLoadRecords() {
-  const { data, error } = await supa
-    .from('sampah_records')
-    .select('*')
-    .order('tanggal', { ascending: false });
-  if (error) throw error;
-  // Konversi format DB → format app
-  return (data || []).map(r => ({
-    id:          r.id,
-    tanggal:     r.tanggal,
-    lokasiId:    r.lokasi_id,
-    lokasiNama:  r.lokasi_nama,
-    lokasiULTG:  r.lokasi_ultg,
-    lokTipe:     r.lokasi_tipe,
-    daun:        String(r.vol_daun   || 0),
-    makan:       String(r.vol_makan  || 0),
-    kertas:      String(r.vol_kertas || 0),
-    plastik:     String(r.vol_plastik|| 0),
-    lain:        String(r.vol_lain   || 0),
-    pen_daun:    r.pen_daun    || 'Komposting',
-    pen_makan:   r.pen_makan   || 'Komposting',
-    pen_kertas:  r.pen_kertas  || 'Bank Sampah',
-    pen_plastik: r.pen_plastik || 'Bank Sampah',
-    pen_lain:    r.pen_lain    || 'TPA',
-    keterangan:  r.keterangan  || '',
-  }));
+// ── DB helpers — Supabase ──────────────────────────────────────
+function dbRowToApp(r){
+  return{
+    id:r.id, tanggal:r.tanggal,
+    lokasiId:r.lokasi_id, lokasiNama:r.lokasi_nama,
+    lokasiULTG:r.lokasi_ultg, lokTipe:r.lokasi_tipe,
+    daun:String(r.vol_daun||0), makan:String(r.vol_makan||0),
+    kertas:String(r.vol_kertas||0), plastik:String(r.vol_plastik||0),
+    lain:String(r.vol_lain||0),
+    pen_daun:r.pen_daun||'Komposting', pen_makan:r.pen_makan||'Komposting',
+    pen_kertas:r.pen_kertas||'Bank Sampah', pen_plastik:r.pen_plastik||'Bank Sampah',
+    pen_lain:r.pen_lain||'TPA', keterangan:r.keterangan||'',
+  };
+}
+async function dbLoadRecords(){
+  const{data,error}=await supa.from('sampah_records').select('*').order('tanggal',{ascending:false});
+  if(error)throw error;
+  return(data||[]).map(dbRowToApp);
+}
+function dbEntryPayload(entry){
+  return{
+    tanggal:entry.tanggal, lokasi_id:entry.lokasiId,
+    lokasi_nama:entry.lokasiNama, lokasi_ultg:entry.lokasiULTG,
+    lokasi_tipe:entry.lokTipe,
+    vol_daun:parseFloat(entry.daun)||0, vol_makan:parseFloat(entry.makan)||0,
+    vol_kertas:parseFloat(entry.kertas)||0, vol_plastik:parseFloat(entry.plastik)||0,
+    vol_lain:parseFloat(entry.lain)||0,
+    pen_daun:entry.pen_daun||'Komposting', pen_makan:entry.pen_makan||'Komposting',
+    pen_kertas:entry.pen_kertas||'Bank Sampah', pen_plastik:entry.pen_plastik||'Bank Sampah',
+    pen_lain:entry.pen_lain||'TPA', keterangan:entry.keterangan||'',
+  };
+}
+async function dbInsertRecord(entry){
+  const{data,error}=await supa.from('sampah_records').insert([dbEntryPayload(entry)]).select().single();
+  if(error)throw error;
+  return data.id;
+}
+async function dbDeleteRecord(id){
+  const{error}=await supa.from('sampah_records').delete().eq('id',id);
+  if(error)throw error;
 }
 
-// Simpan 1 record ke Supabase
-async function dbInsertRecord(entry) {
-  const { data, error } = await supa.from('sampah_records').insert([{
-    tanggal:      entry.tanggal,
-    lokasi_id:    entry.lokasiId,
-    lokasi_nama:  entry.lokasiNama,
-    lokasi_ultg:  entry.lokasiULTG,
-    lokasi_tipe:  entry.lokTipe,
-    vol_daun:     parseFloat(entry.daun)    || 0,
-    vol_makan:    parseFloat(entry.makan)   || 0,
-    vol_kertas:   parseFloat(entry.kertas)  || 0,
-    vol_plastik:  parseFloat(entry.plastik) || 0,
-    vol_lain:     parseFloat(entry.lain)    || 0,
-    pen_daun:     entry.pen_daun    || 'Komposting',
-    pen_makan:    entry.pen_makan   || 'Komposting',
-    pen_kertas:   entry.pen_kertas  || 'Bank Sampah',
-    pen_plastik:  entry.pen_plastik || 'Bank Sampah',
-    pen_lain:     entry.pen_lain    || 'TPA',
-    keterangan:   entry.keterangan  || '',
-  }]).select().single();
-  if (error) throw error;
-  return data.id; // kembalikan UUID dari DB
+// ── OFFLINE / CACHE LAYER ───────────────────────────────────────
+const LS_CACHE  ='sp_cache_v2';   // data tersinkron terakhir
+const LS_Q_INS  ='sp_q_insert';   // antrian insert offline
+const LS_Q_DEL  ='sp_q_delete';   // antrian delete offline
+
+function lsGet(k,def){
+  try{const v=localStorage.getItem(k);return v!==null?JSON.parse(v):def;}
+  catch{return def;}
+}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+
+// Ambil semua records gabungan: cache + antrian insert
+function lsGetAllRecords(){
+  const cache  = lsGet(LS_CACHE,[]);
+  const qIns   = lsGet(LS_Q_INS,[]);
+  const qDel   = new Set(lsGet(LS_Q_DEL,[]));
+  // Gabungkan dan keluarkan yang ada di antrian delete
+  return [...qIns,...cache].filter(r=>!qDel.has(r.id));
 }
 
-// Hapus record dari Supabase
-async function dbDeleteRecord(id) {
-  const { error } = await supa.from('sampah_records').delete().eq('id', id);
-  if (error) throw error;
+// Sinkronisasi antrian offline → Supabase
+async function syncOfflineQueue(){
+  const qIns = lsGet(LS_Q_INS,[]);
+  const qDel = lsGet(LS_Q_DEL,[]);
+  if(!qIns.length && !qDel.length) return{synced:0,failed:0};
+
+  let synced=0, failed=0;
+  const failIns=[], failDel=[];
+
+  for(const entry of qIns){
+    try{
+      // Hapus ID lokal sebelum kirim ke Supabase
+      const{id:_localId,...entryClean}=entry;
+      await dbInsertRecord(entryClean);
+      synced++;
+    }catch{failed++;failIns.push(entry);}
+  }
+  for(const id of qDel){
+    if(id.startsWith('local_')){synced++;continue;} // sudah tidak ada di DB
+    try{await dbDeleteRecord(id);synced++;}
+    catch{failed++;failDel.push(id);}
+  }
+
+  lsSet(LS_Q_INS,failIns);
+  lsSet(LS_Q_DEL,failDel);
+  return{synced,failed};
 }
 
 // Build sampahLokasi (state peta) dari records
@@ -1646,9 +1676,7 @@ function PageLaporan({records}){
     <div className="card" style={{marginBottom:8}}>
       <div className="card-title" style={{marginBottom:12}}>📊 Volume per Jenis Sampah</div>
       <BarChart h={100} data={JENIS.map(j=>({
-        label:j.label.replace('/',' /
-').replace('Lain-lain ','Lain
-'),
+        label:j.label.replace('/','/ ').replace('Lain-lain (Kaca/Besi)','Lain-lain'),
         segs:[{v:tJ[j.key],c:j.color}],
       }))}/>
       <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:10,justifyContent:'center'}}>
@@ -1890,74 +1918,230 @@ const PAGE_TITLE={
 };
 
 function App(){
-  const [page,      setPage]      = useState('peta');
-  const [records,   setRecords]   = useState([]);
-  const [sampahLok, setSampahLok] = useState({});
-  const [toast,     setToast]     = useState(null);
-  const [filterULTG,setFilterULTG]= useState('Semua');
-  const [selectedId,setSelectedId]= useState(null);
-  const [modalLok,  setModalLok]  = useState(null);
-  const [dbStatus,  setDbStatus]  = useState('loading'); // loading | ok | error
-  const [appLoading,setAppLoading]= useState(true);
+  const [page,       setPage]      = useState('peta');
+  const [records,    setRecords]   = useState([]);
+  const [sampahLok,  setSampahLok] = useState({});
+  const [toast,      setToast]     = useState(null);
+  const [filterULTG, setFilterULTG]= useState('Semua');
+  const [selectedId, setSelectedId]= useState(null);
+  const [modalLok,   setModalLok]  = useState(null);
+  const [dbStatus,   setDbStatus]  = useState('loading');
+  // 'loading'|'ok'|'offline'|'syncing'
+  const [appLoading, setAppLoading]= useState(true);
+  const [fromCache,  setFromCache] = useState(false);
+  const [pendingCnt, setPendingCnt]= useState(0);
 
-  const showToast = msg => { setToast(msg); setTimeout(()=>setToast(null), 3000); };
+  const recordsRef = React.useRef([]);
 
-  // ── Load data dari Supabase saat pertama buka ──
+  const showToast = (msg,dur=3500) => {
+    setToast(msg); setTimeout(()=>setToast(null),dur);
+  };
+
+  // Helper hitung antrian
+  const refreshPending = () => {
+    const n = lsGet(LS_Q_INS,[]).length + lsGet(LS_Q_DEL,[]).length;
+    setPendingCnt(n);
+    return n;
+  };
+
+  // ── Load awal: coba Supabase, fallback ke localStorage ────────
   useEffect(()=>{
     (async()=>{
-      try {
-        setDbStatus('loading');
+      setDbStatus('loading');
+      try{
         const recs = await dbLoadRecords();
+        // Simpan ke cache lokal
+        lsSet(LS_CACHE, recs);
         setRecords(recs);
+        recordsRef.current = recs;
         setSampahLok(buildSampahLokasi(recs));
         setDbStatus('ok');
-      } catch(e) {
-        console.error('DB load error:', e);
-        setDbStatus('error');
-        showToast('⚠️ Gagal memuat data dari server. Periksa koneksi internet.');
-      } finally {
+        setFromCache(false);
+        // Langsung sync antrian yang tertinggal
+        const pending = lsGet(LS_Q_INS,[]).length + lsGet(LS_Q_DEL,[]).length;
+        if(pending > 0) syncNow(recs);
+      }catch(e){
+        console.warn('DB offline, load dari cache:', e.message);
+        // Fallback: gabungkan cache + antrian insert
+        const cached = lsGetAllRecords();
+        setRecords(cached);
+        recordsRef.current = cached;
+        setSampahLok(buildSampahLokasi(cached));
+        setDbStatus('offline');
+        setFromCache(true);
+        refreshPending();
+        showToast('📵 Offline — data dari penyimpanan lokal','',5000);
+      }finally{
         setAppLoading(false);
       }
     })();
-  }, []);
+  },[]);
 
-  // ── Simpan record baru ke DB ──
-  async function addRecord(entry) {
-    try {
-      const dbId = await dbInsertRecord(entry);
-      const newEntry = { ...entry, id: dbId };
-      setRecords(r => [newEntry, ...r]);
-      setSampahLok(buildSampahLokasi([newEntry, ...records]));
-      return true;
-    } catch(e) {
-      console.error('Insert error:', e);
-      showToast('⚠️ Gagal menyimpan ke database. Periksa koneksi internet.');
-      return false;
+  // ── Listener online/offline browser ───────────────────────────
+  useEffect(()=>{
+    const goOnline = async () => {
+      if(dbStatus==='ok') return;
+      showToast('🔄 Koneksi kembali — mencoba sinkronisasi...');
+      await retryConnect();
+    };
+    const goOffline = () => {
+      setDbStatus('offline');
+      showToast('📵 Koneksi terputus — data disimpan lokal');
+    };
+    window.addEventListener('online',  goOnline);
+    window.addEventListener('offline', goOffline);
+    return()=>{
+      window.removeEventListener('online',  goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  },[dbStatus]);
+
+  // ── Coba sambung ulang ke Supabase ────────────────────────────
+  async function retryConnect(){
+    setDbStatus('loading');
+    try{
+      const recs = await dbLoadRecords();
+      lsSet(LS_CACHE, recs);
+      // Sync antrian offline dulu
+      const n = refreshPending();
+      if(n>0){
+        setDbStatus('syncing');
+        const{synced,failed} = await syncOfflineQueue();
+        // Load ulang setelah sync
+        const fresh = await dbLoadRecords();
+        lsSet(LS_CACHE, fresh);
+        setRecords(fresh);
+        recordsRef.current = fresh;
+        setSampahLok(buildSampahLokasi(fresh));
+        refreshPending();
+        showToast(failed===0
+          ? `✅ Sinkronisasi selesai — ${synced} data terkirim`
+          : `⚠️ ${synced} berhasil, ${failed} gagal dikirim`
+        );
+      }else{
+        setRecords(recs);
+        recordsRef.current = recs;
+        setSampahLok(buildSampahLokasi(recs));
+        showToast('✅ Kembali online');
+      }
+      setDbStatus('ok');
+      setFromCache(false);
+    }catch(e){
+      setDbStatus('offline');
+      showToast('❌ Masih offline — data tetap tersimpan lokal');
     }
   }
 
-  // ── Hapus record dari DB ──
-  async function deleteRecord(id) {
-    try {
-      await dbDeleteRecord(id);
-      const newRecs = records.filter(x => x.id !== id);
-      setRecords(newRecs);
-      setSampahLok(buildSampahLokasi(newRecs));
-      showToast('🗑 Data berhasil dihapus');
-    } catch(e) {
-      showToast('⚠️ Gagal menghapus data. Periksa koneksi internet.');
+  // ── Sinkronisasi manual ───────────────────────────────────────
+  async function syncNow(currentRecs){
+    setDbStatus('syncing');
+    try{
+      const{synced,failed} = await syncOfflineQueue();
+      const fresh = await dbLoadRecords();
+      lsSet(LS_CACHE, fresh);
+      setRecords(fresh);
+      recordsRef.current = fresh;
+      setSampahLok(buildSampahLokasi(fresh));
+      refreshPending();
+      setDbStatus('ok');
+      setFromCache(false);
+      if(synced>0)
+        showToast(failed===0
+          ? `✅ ${synced} data berhasil disinkronkan ke cloud`
+          : `⚠️ ${synced} berhasil, ${failed} masih gagal`
+        );
+    }catch(e){
+      setDbStatus('offline');
+      showToast('❌ Gagal sinkronisasi — masih offline');
     }
+  }
+
+  // ── Simpan record (online → Supabase, offline → localStorage) ─
+  async function addRecord(entry){
+    if(dbStatus==='ok'||dbStatus==='syncing'){
+      try{
+        const dbId = await dbInsertRecord(entry);
+        const newEntry = {...entry, id:dbId};
+        const newRecs = [newEntry, ...recordsRef.current];
+        setRecords(newRecs);
+        recordsRef.current = newRecs;
+        setSampahLok(buildSampahLokasi(newRecs));
+        // Update cache
+        lsSet(LS_CACHE, newRecs);
+        return true;
+      }catch(e){
+        console.warn('Insert gagal, simpan lokal:', e.message);
+        setDbStatus('offline');
+      }
+    }
+    // Simpan ke antrian offline
+    const tempId = 'local_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    const newEntry = {...entry, id:tempId, _offline:true};
+    const qIns = lsGet(LS_Q_INS,[]);
+    lsSet(LS_Q_INS, [newEntry,...qIns]);
+    const newRecs = [newEntry, ...recordsRef.current];
+    setRecords(newRecs);
+    recordsRef.current = newRecs;
+    setSampahLok(buildSampahLokasi(newRecs));
+    refreshPending();
+    showToast('📵 Tersimpan lokal — akan dikirim saat online');
+    return true;
+  }
+
+  // ── Hapus record ──────────────────────────────────────────────
+  async function deleteRecord(id){
+    // Hapus dari state dulu (optimistic)
+    const newRecs = recordsRef.current.filter(x=>x.id!==id);
+    setRecords(newRecs);
+    recordsRef.current = newRecs;
+    setSampahLok(buildSampahLokasi(newRecs));
+
+    // Jika ID lokal (belum tersinkron), cukup hapus dari antrian insert
+    if(id.startsWith('local_')){
+      const qIns = lsGet(LS_Q_INS,[]).filter(r=>r.id!==id);
+      lsSet(LS_Q_INS, qIns);
+      refreshPending();
+      showToast('🗑 Data lokal dihapus');
+      return;
+    }
+
+    // Coba hapus dari Supabase
+    if(dbStatus==='ok'||dbStatus==='syncing'){
+      try{
+        await dbDeleteRecord(id);
+        lsSet(LS_CACHE, newRecs);
+        showToast('🗑 Data berhasil dihapus');
+        return;
+      }catch(e){
+        setDbStatus('offline');
+      }
+    }
+    // Antrian delete offline
+    const qDel = lsGet(LS_Q_DEL,[]);
+    lsSet(LS_Q_DEL, [...qDel, id]);
+    refreshPending();
+    showToast('📵 Penghapusan antri — akan dikirim saat online');
   }
 
   const onFlyTo   = lok => { setPage('peta'); setSelectedId(lok.id); };
   const openInput = lok => setModalLok(lok);
   const isPeta    = page === 'peta';
 
-  if (appLoading) return(
+  // Label & warna badge status
+  const badgeInfo = {
+    loading:  {cls:'db-loading', txt:'🟡 Menghubungkan...'},
+    ok:       {cls:'db-ok',      txt:'🟢 Database OK'},
+    offline:  {cls:'db-err',     txt:`🔴 Offline${pendingCnt>0?' ('+pendingCnt+' antrian)':''}`},
+    syncing:  {cls:'db-loading', txt:'🔵 Sinkronisasi...'},
+  }[dbStatus] || {cls:'db-loading',txt:'🟡 ...'};
+
+  if(appLoading) return(
     <div className="loading-overlay">
       <div className="loading-spin"/>
       <div className="loading-txt">♻ SampahPintar</div>
-      <div className="loading-sub">Memuat data dari server...</div>
+      <div className="loading-sub">
+        {fromCache?'Memuat data lokal...':'Memuat data dari server...'}
+      </div>
     </div>
   );
 
@@ -1985,17 +2169,55 @@ function App(){
             {l:'Total Lokasi', v:`${DATA_LOKASI.length}`, c:'var(--white)'},
             {l:'ULTG',         v:'6',                     c:'var(--ultg)'},
             {l:'GI/GIS/GITET', v:`${DATA_LOKASI.filter(l=>l.tipe!=='ULTG'&&l.tipe!=='KANTOR').length}`, c:'var(--pln)'},
-            {l:'Data Tersimpan',v:records.length,         c:'var(--g1)'},
+            {l:'Data Tersimpan',v:records.length+(pendingCnt>0?` (+${pendingCnt}⏳)`:''), c:'var(--g1)'},
           ].map(x=>(
             <div key={x.l} className="row">
               <span style={{color:'var(--muted)'}}>{x.l}</span>
               <span className="val" style={{color:x.c}}>{x.v}</span>
             </div>
           ))}
-          <div style={{marginTop:8,paddingTop:8,borderTop:'1px solid var(--border)',display:'flex',alignItems:'center',gap:6}}>
-            <span className={`db-badge ${dbStatus==='ok'?'db-ok':dbStatus==='error'?'db-err':'db-loading'}`}>
-              {dbStatus==='ok'?'🟢 Database OK':dbStatus==='error'?'🔴 Offline':'🟡 Menghubungkan...'}
+          <div style={{marginTop:8,paddingTop:8,borderTop:'1px solid var(--border)'}}>
+            <span className={`db-badge ${badgeInfo.cls}`}>
+              {badgeInfo.txt}
             </span>
+            {fromCache&&dbStatus==='offline'&&(
+              <div style={{fontSize:9,color:'var(--muted)',marginTop:4,lineHeight:1.5}}>
+                📂 Menampilkan data lokal
+              </div>
+            )}
+            {(dbStatus==='offline'||dbStatus==='ok')&&pendingCnt>0&&(
+              <button
+                onClick={()=>syncNow(records)}
+                disabled={dbStatus==='syncing'}
+                style={{
+                  marginTop:6,width:'100%',
+                  background:'rgba(96,165,250,.15)',
+                  border:'1px solid rgba(96,165,250,.35)',
+                  borderRadius:6,color:'#93c5fd',
+                  fontFamily:"'DM Sans',sans-serif",fontSize:9,
+                  fontWeight:700,padding:'5px 8px',
+                  cursor:'pointer',
+                  display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                }}>
+                🔄 Sinkronkan {pendingCnt} data
+              </button>
+            )}
+            {dbStatus==='offline'&&pendingCnt===0&&(
+              <button
+                onClick={retryConnect}
+                style={{
+                  marginTop:6,width:'100%',
+                  background:'rgba(93,189,106,.12)',
+                  border:'1px solid rgba(93,189,106,.25)',
+                  borderRadius:6,color:'var(--g1)',
+                  fontFamily:"'DM Sans',sans-serif",fontSize:9,
+                  fontWeight:700,padding:'5px 8px',
+                  cursor:'pointer',
+                  display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                }}>
+                ↺ Coba sambung ulang
+              </button>
+            )}
           </div>
         </div>
       </div>

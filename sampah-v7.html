@@ -704,12 +704,8 @@ function MapSidebar({sampahLokasi,filterULTG,setFilterULTG,selectedId,setSelecte
     return u&&t&&c;
   }),[filterULTG,filterTipe,search]);
 
-  // Kelompok per ULTG
-  const grouped=useMemo(()=>{
-    const g={};
-    filtered.forEach(l=>{if(!g[l.ultg])g[l.ultg]=[];g[l.ultg].push(l);});
-    return g;
-  },[filtered]);
+  // Jika ada hasil pencarian, terbangkan ke lokasi pertama
+  const hasSearch=search.trim().length>0;
 
   // Stats global
   const stats=useMemo(()=>{
@@ -718,9 +714,22 @@ function MapSidebar({sampahLokasi,filterULTG,setFilterULTG,selectedId,setSelecte
     return{tot,jLok:DATA_LOKASI.filter(l=>l.tipe!=='KANTOR').length};
   },[sampahLokasi]);
 
+  // Hitung per-ULTG ringkasan untuk ditampilkan
+  const ultgSummary=useMemo(()=>{
+    const m={};
+    DATA_LOKASI.forEach(l=>{
+      if(l.tipe==='KANTOR')return;
+      if(!m[l.ultg])m[l.ultg]={nama:l.ultg,count:0,withData:0};
+      m[l.ultg].count++;
+      const d=sampahLokasi[l.id]||[];
+      if(d.length>0)m[l.ultg].withData++;
+    });
+    return Object.values(m).sort((a,b)=>a.nama.localeCompare(b.nama));
+  },[sampahLokasi]);
+
   return(
     <div className="map-sidebar">
-      {/* Header */}
+      {/* Header + Filter */}
       <div className="ms-head">
         <div className="ms-title">📍 Peta GI & ULTG</div>
         <div className="ms-filter">
@@ -730,52 +739,98 @@ function MapSidebar({sampahLokasi,filterULTG,setFilterULTG,selectedId,setSelecte
           <select className="ms-sel" value={filterTipe} onChange={e=>setFilterTipe(e.target.value)}>
             {['Semua','GI','GIS','GITET','ULTG'].map(t=><option key={t}>{t}</option>)}
           </select>
-          <input className="ms-search" placeholder="🔍 Cari lokasi / kota..." value={search} onChange={e=>setSearch(e.target.value)}/>
+          <input className="ms-search" placeholder="🔍 Cari lokasi / kota..."
+            value={search} onChange={e=>setSearch(e.target.value)}/>
         </div>
       </div>
 
-      {/* Daftar lokasi per ULTG */}
-      <div className="ms-list">
-        {Object.entries(grouped).sort(([a],[b])=>a.localeCompare(b)).map(([uName,loks])=>{
-          const warna=ULTG_WARNA[uName]||'var(--muted)';
-          return(
-            <div key={uName}>
-              <div className="ms-group-head" style={{color:warna}}>
-                <div style={{width:8,height:8,borderRadius:'50%',background:warna,flexShrink:0}}/>
-                {uName}
-              </div>
-              {loks.map(lok=>{
-                const d=sampahLokasi[lok.id]||[];
-                const stat=d.length?totBulanIni(d):{total:0};
-                const isULTG=lok.tipe==='ULTG'||lok.tipe==='KANTOR';
-                const sel=selectedId===lok.id;
-                const mc=warnaTipe(lok.tipe);
-                return(
-                  <div key={lok.id}
-                    className={`ms-item${sel?(isULTG?' sel-ultg':' sel'):''}`}
-                    onClick={()=>{setSelectedId(lok.id);onFlyTo(lok);}}>
-                    <div className="ms-dot" style={{background:mc,borderRadius:lok.tipe==='GI'?'50%':lok.tipe==='ULTG'||lok.tipe==='KANTOR'?'3px':'50%'}}/>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div className="ms-name" style={{color:sel?mc:'var(--text)'}}>{lok.nama}</div>
-                      <div className="ms-sub">{lok.kota} · <span style={{color:mc,fontWeight:600}}>{lok.tipe}</span></div>
-                    </div>
-                    <div style={{textAlign:'right',flexShrink:0}}>
-                      <div className="ms-vol" style={{color:stat.total>30?'var(--g3)':stat.total>15?'var(--g2)':'var(--muted)'}}>{fmtKg(stat.total)}</div>
-                      <div style={{cursor:'pointer',fontSize:9,color:'var(--pln)',fontWeight:600,marginTop:1}} onClick={e=>{e.stopPropagation();onInputClick(lok);}}>+ Input</div>
-                    </div>
-                  </div>
-                );
-              })}
+      {/* Hasil pencarian — tampil hanya saat ada kata kunci */}
+      {hasSearch?(
+        <div style={{padding:'8px 12px',flex:1,overflowY:'auto'}}>
+          {filtered.length===0?(
+            <div style={{textAlign:'center',padding:'20px 0',fontSize:11,color:'var(--muted)'}}>
+              Tidak ditemukan
             </div>
-          );
-        })}
-      </div>
+          ):filtered.map(lok=>{
+            const d=sampahLokasi[lok.id]||[];
+            const tot2=d.reduce((s,e)=>s+sumAll(e),0);
+            const sel=selectedId===lok.id;
+            const mc=ULTG_WARNA[lok.ultg]||warnaTipe(lok.tipe);
+            return(
+              <div key={lok.id}
+                onClick={()=>{setSelectedId(lok.id);onFlyTo(lok);setSearch('');}}
+                style={{
+                  display:'flex',gap:10,alignItems:'center',
+                  padding:'8px 10px',borderRadius:8,cursor:'pointer',
+                  background:sel?`${mc}15`:'transparent',
+                  border:`1px solid ${sel?mc:'transparent'}`,
+                  marginBottom:4,transition:'all .15s',
+                }}>
+                <div style={{width:9,height:9,borderRadius:lok.tipe==='GI'||lok.tipe==='GIS'||lok.tipe==='GITET'?'50%':'3px',
+                  background:mc,flexShrink:0}}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:11,fontWeight:600,color:'var(--white)',
+                    overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lok.nama}</div>
+                  <div style={{fontSize:9,color:'var(--muted)'}}>{lok.kota} · <span style={{color:mc}}>{lok.tipe}</span></div>
+                </div>
+                {tot2>0&&<div style={{fontSize:10,color:'var(--g1)',flexShrink:0,fontWeight:700}}>{fmtKg(tot2)}</div>}
+              </div>
+            );
+          })}
+        </div>
+      ):(
+        /* Ringkasan per ULTG — tampil saat tidak ada pencarian */
+        <div style={{padding:'8px 12px',flex:1,overflowY:'auto'}}>
+          <div style={{fontSize:9,fontWeight:700,color:'var(--muted)',
+            textTransform:'uppercase',letterSpacing:.8,marginBottom:8}}>
+            Ringkasan per ULTG
+          </div>
+          {ultgSummary.map(u=>{
+            const warna=ULTG_WARNA[u.nama]||'var(--muted)';
+            const isActive=filterULTG===u.nama;
+            return(
+              <div key={u.nama}
+                onClick={()=>setFilterULTG(isActive?'Semua':u.nama)}
+                style={{
+                  display:'flex',alignItems:'center',gap:8,
+                  padding:'8px 10px',borderRadius:8,cursor:'pointer',
+                  background:isActive?`${warna}18`:'transparent',
+                  border:`1px solid ${isActive?warna:'transparent'}`,
+                  marginBottom:5,transition:'all .15s',
+                }}>
+                <div style={{width:10,height:10,borderRadius:3,
+                  background:warna,flexShrink:0}}/>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:11,fontWeight:600,
+                    color:isActive?warna:'var(--white)'}}>{u.nama}</div>
+                  <div style={{fontSize:9,color:'var(--muted)',marginTop:1}}>
+                    {u.count} lokasi
+                    {u.withData>0&&<span style={{color:'var(--g1)',marginLeft:5}}>· {u.withData} ada data</span>}
+                  </div>
+                </div>
+                {isActive&&<span style={{fontSize:9,color:warna}}>✓</span>}
+              </div>
+            );
+          })}
+          <div style={{marginTop:10,padding:'8px 10px',borderRadius:8,
+            background:'rgba(255,255,255,.03)',border:'1px solid var(--border)',
+            fontSize:9,color:'var(--muted)',lineHeight:1.7}}>
+            💡 Ketik di kolom cari untuk temukan GI tertentu.<br/>
+            Klik ULTG untuk filter peta.
+          </div>
+        </div>
+      )}
 
       {/* Stats bar bawah */}
       <div className="ms-stats-bar">
-        <span className="ms-chip">🗑 {fmtKg(stats.tot)}/bln</span>
-        <span className="ms-chip" style={{color:'var(--pln)'}}>⚡ {stats.jLok} titik</span>
-        <span className="ms-chip" style={{color:'var(--ultg)'}}>🏢 {DATA_LOKASI.filter(l=>l.tipe==='ULTG').length} ULTG</span>
+        <span className="ms-chip">
+          {filterULTG==='Semua'
+            ?`⚡ ${filtered.length} lokasi`
+            :`⚡ ${filtered.length}/${DATA_LOKASI.length}`}
+        </span>
+        <span className="ms-chip" style={{color:'var(--ultg)'}}>
+          🏢 {DATA_LOKASI.filter(l=>l.tipe==='ULTG').length} ULTG
+        </span>
       </div>
     </div>
   );

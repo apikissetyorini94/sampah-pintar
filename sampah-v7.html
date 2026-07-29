@@ -1511,11 +1511,49 @@ function BarChart({data,h=110}){
 }
 
 function PageLaporan({records}){
+  const [mode,setMode]=useState('all'); // 'all'|'tahun'|'bulan'
   const [b,setB]=useState(TODAY.getMonth());
   const [y,setY]=useState(TODAY.getFullYear());
-  const f=useMemo(()=>records.filter(r=>{
-    const d=new Date(r.tanggal);return d.getMonth()===b&&d.getFullYear()===y;
-  }),[records,b,y]);
+
+  // Tahun yang tersedia dari data
+  const tahunList=useMemo(()=>{
+    const s=new Set(records.map(r=>new Date(r.tanggal).getFullYear()));
+    return [...s].sort((a,b)=>a-b);
+  },[records]);
+
+  // Records sesuai filter mode
+  const f=useMemo(()=>{
+    if(mode==='bulan') return records.filter(r=>{
+      const d=new Date(r.tanggal);return d.getMonth()===b&&d.getFullYear()===y;
+    });
+    if(mode==='tahun') return records.filter(r=>new Date(r.tanggal).getFullYear()===y);
+    return records; // semua waktu
+  },[records,mode,b,y]);
+
+  // Tren bulanan dari SEMUA data (untuk grafik tren kumulatif)
+  const trenBulan=useMemo(()=>{
+    const m={};
+    records.forEach(r=>{
+      const d=new Date(r.tanggal);
+      const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      if(!m[k])m[k]={k,yr:d.getFullYear(),bln:d.getMonth(),org:0,anorg:0};
+      m[k].org+=sumGrup(r,'organik');
+      m[k].anorg+=sumGrup(r,'anorganik');
+    });
+    return Object.values(m).sort((a,b)=>a.k.localeCompare(b.k));
+  },[records]);
+
+  // Tren tahunan
+  const trenTahun=useMemo(()=>{
+    const m={};
+    records.forEach(r=>{
+      const yr=new Date(r.tanggal).getFullYear();
+      if(!m[yr])m[yr]={yr,org:0,anorg:0};
+      m[yr].org+=sumGrup(r,'organik');
+      m[yr].anorg+=sumGrup(r,'anorganik');
+    });
+    return Object.values(m).sort((a,b)=>a.yr-b.yr);
+  },[records]);
 
   const tJ=useMemo(()=>{
     const o={};JENIS.forEach(j=>{o[j.key]=f.reduce((s,r)=>s+vNum(r[j.key]),0);});return o;
@@ -1529,9 +1567,8 @@ function PageLaporan({records}){
     const p=r[penKey(j.key)]||'Komposting';bP[p]=(bP[p]||0)+vNum(r[j.key]);
   }));
   const pctTPA=tot>0?((bP.TPA/tot)*100):0;
-  const dailySorted=useMemo(()=>[...f].sort((a,x)=>a.tanggal.localeCompare(x.tanggal)),[f]);
 
-  // Per-ULTG + per-GI breakdown
+  // Per-ULTG+GI breakdown dari data terfilter
   const byULTG=useMemo(()=>{
     const m={};
     f.forEach(r=>{
@@ -1545,51 +1582,75 @@ function PageLaporan({records}){
       m[u].loks[lid].anorg+=sumGrup(r,'anorganik');
     });
     return Object.values(m).map(u=>({
-      ...u,
-      loks:Object.values(u.loks).sort((a,b)=>(b.org+b.anorg)-(a.org+a.anorg))
+      ...u,loks:Object.values(u.loks).sort((a,b)=>(b.org+b.anorg)-(a.org+a.anorg))
     })).sort((a,b)=>(b.org+b.anorg)-(a.org+a.anorg));
   },[f]);
   const [expandedULTG,setExpandedULTG]=useState({});
   const toggleULTG=u=>setExpandedULTG(p=>({...p,[u]:!p[u]}));
 
-  if(f.length===0) return(
-    <>
-      <MonthSel bulan={b} setBulan={setB} tahun={y} setTahun={setY}/>
-      <div className="card" style={{textAlign:'center',padding:'40px 20px'}}>
-        <div style={{fontSize:40,marginBottom:12}}>📊</div>
-        <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'var(--white)',marginBottom:6}}>
-          Belum Ada Data
-        </div>
-        <div style={{fontSize:11,color:'var(--muted)'}}>
-          Tidak ada data untuk {BULAN_FULL[b]} {y}.<br/>
-          Silakan input data di menu 📥 Input Harian.
-        </div>
-      </div>
-    </>
+  // Label periode aktif
+  const periodeLabel=mode==='bulan'?`${BULAN_FULL[b]} ${y}`:mode==='tahun'?`Tahun ${y}`:'Semua Waktu';
+  const SS={background:'var(--bg)',border:'1px solid var(--border)',borderRadius:7,
+    color:'var(--text)',padding:'5px 9px',fontFamily:"'DM Sans',sans-serif",fontSize:11,outline:'none'};
+
+  if(records.length===0) return(
+    <div className="card" style={{textAlign:'center',padding:'40px 20px'}}>
+      <div style={{fontSize:40,marginBottom:12}}>📊</div>
+      <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'var(--white)',marginBottom:6}}>Belum Ada Data</div>
+      <div style={{fontSize:11,color:'var(--muted)'}}>Silakan input data di menu 📥 Input Harian.</div>
+    </div>
   );
 
   return(<>
-    <MonthSel bulan={b} setBulan={setB} tahun={y} setTahun={setY}/>
+    {/* ── Filter Mode ── */}
+    <div className="card" style={{marginBottom:8,padding:'10px 14px'}}>
+      <div style={{display:'flex',gap:6,marginBottom:f.length===0||mode!=='bulan'?0:0}}>
+        {[
+          {id:'all',   label:'🗂 Semua Waktu'},
+          {id:'tahun', label:'📅 Per Tahun'},
+          {id:'bulan', label:'🗓 Per Bulan'},
+        ].map(m=>(
+          <button key={m.id} onClick={()=>setMode(m.id)} style={{
+            flex:1,padding:'6px 4px',borderRadius:7,border:'none',cursor:'pointer',
+            fontFamily:"'DM Sans',sans-serif",fontSize:10,fontWeight:700,
+            background:mode===m.id?'var(--g1)':'var(--bg)',
+            color:mode===m.id?'#0a1a0b':'var(--muted)',
+            transition:'all .2s',
+          }}>{m.label}</button>
+        ))}
+      </div>
+      {mode!=='all'&&(
+        <div style={{display:'flex',gap:8,marginTop:8}}>
+          {mode==='bulan'&&(
+            <select value={b} onChange={e=>setB(Number(e.target.value))} style={SS}>
+              {BULAN_FULL.map((bn,i)=><option key={i} value={i}>{bn}</option>)}
+            </select>
+          )}
+          <select value={y} onChange={e=>setY(Number(e.target.value))} style={SS}>
+            {tahunList.length?tahunList.map(yr=><option key={yr}>{yr}</option>)
+              :<option>{TODAY.getFullYear()}</option>}
+          </select>
+        </div>
+      )}
+    </div>
+
+    {f.length===0?(
+      <div className="card" style={{textAlign:'center',padding:'24px'}}>
+        <div style={{fontSize:11,color:'var(--muted)'}}>Tidak ada data untuk {periodeLabel}</div>
+      </div>
+    ):<>
 
     {/* ── 1. Hero Stats ── */}
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:8}}>
       {[
-        {icon:'⚖️', label:'Total Sampah', val:fmtKg(tot), color:'var(--g1)',
-         bg:'rgba(93,189,106,.12)', border:'rgba(93,189,106,.3)'},
-        {icon:'🌿', label:'Organik', val:fmtKg(tO), color:'#4ade80',
-         bg:'rgba(74,222,128,.08)', border:'rgba(74,222,128,.25)'},
-        {icon:'🧴', label:'Anorganik', val:fmtKg(tA), color:'var(--g2)',
-         bg:'rgba(201,168,76,.08)', border:'rgba(201,168,76,.25)'},
+        {icon:'⚖️',label:'Total Sampah',val:fmtKg(tot),color:'var(--g1)',bg:'rgba(93,189,106,.12)',border:'rgba(93,189,106,.3)'},
+        {icon:'🌿',label:'Organik',val:fmtKg(tO),color:'#4ade80',bg:'rgba(74,222,128,.08)',border:'rgba(74,222,128,.25)'},
+        {icon:'🧴',label:'Anorganik',val:fmtKg(tA),color:'var(--g2)',bg:'rgba(201,168,76,.08)',border:'rgba(201,168,76,.25)'},
       ].map(x=>(
-        <div key={x.label} style={{
-          background:x.bg, border:`1px solid ${x.border}`,
-          borderRadius:12, padding:'12px 10px', textAlign:'center',
-        }}>
+        <div key={x.label} style={{background:x.bg,border:`1px solid ${x.border}`,borderRadius:12,padding:'12px 10px',textAlign:'center'}}>
           <div style={{fontSize:20,marginBottom:4}}>{x.icon}</div>
-          <div style={{fontSize:14,fontWeight:800,color:x.color,
-            fontFamily:'Syne,sans-serif',lineHeight:1.1}}>{x.val}</div>
-          <div style={{fontSize:9,color:'var(--muted)',marginTop:3,fontWeight:600,
-            textTransform:'uppercase',letterSpacing:.5}}>{x.label}</div>
+          <div style={{fontSize:14,fontWeight:800,color:x.color,fontFamily:'Syne,sans-serif',lineHeight:1.1}}>{x.val}</div>
+          <div style={{fontSize:9,color:'var(--muted)',marginTop:3,fontWeight:600,textTransform:'uppercase',letterSpacing:.5}}>{x.label}</div>
         </div>
       ))}
     </div>
@@ -1597,36 +1658,24 @@ function PageLaporan({records}){
     {/* Stat strip */}
     <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginBottom:10}}>
       {[
-        {l:'Jumlah Input', v:f.length+' entri', c:'#7ab8ff'},
-        {l:'Rata-rata/Input', v:fmtKg(avg), c:'var(--muted)'},
-        {l:'% ke TPA', v:pctTPA.toFixed(1)+'%',
-         c:pctTPA>30?'var(--g3)':pctTPA>15?'var(--g2)':'var(--g1)'},
+        {l:'Jumlah Input',v:f.length+' entri',c:'#7ab8ff'},
+        {l:'Rata-rata/Input',v:fmtKg(avg),c:'var(--muted)'},
+        {l:'% ke TPA',v:pctTPA.toFixed(1)+'%',c:pctTPA>30?'var(--g3)':pctTPA>15?'var(--g2)':'var(--g1)'},
       ].map(x=>(
-        <div key={x.l} style={{
-          background:'var(--surface)',border:'1px solid var(--border)',
-          borderRadius:8,padding:'7px 10px',
-        }}>
+        <div key={x.l} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,padding:'7px 10px'}}>
           <div style={{fontSize:12,fontWeight:700,color:x.c}}>{x.v}</div>
           <div style={{fontSize:9,color:'var(--muted)',marginTop:1}}>{x.l}</div>
         </div>
       ))}
     </div>
 
-    {/* ── 2. Donut Charts Row ── */}
+    {/* ── 2. Donut Charts ── */}
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:8}}>
-
-      {/* Donut: Komposisi */}
       <div className="card">
         <div className="card-title" style={{marginBottom:12}}>🥧 Komposisi</div>
         <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'center'}}>
-          <DonutChart
-            size={110} thick={16}
-            label={fmt(tot)} sublabel="kg"
-            segments={[
-              {val:tO, color:'#4ade80'},
-              {val:tA, color:'#f59e0b'},
-            ]}
-          />
+          <DonutChart size={110} thick={16} label={fmt(tot)} sublabel="kg"
+            segments={[{val:tO,color:'#4ade80'},{val:tA,color:'#f59e0b'}]}/>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {[
               {c:'#4ade80',l:'🌿 Organik',v:tO,p:tot>0?(tO/tot*100).toFixed(1):0},
@@ -1637,29 +1686,18 @@ function PageLaporan({records}){
                   <div style={{width:8,height:8,borderRadius:2,background:x.c,flexShrink:0}}/>
                   <span style={{fontSize:10,color:'var(--muted)'}}>{x.l}</span>
                 </div>
-                <div style={{fontSize:13,fontWeight:700,color:x.c,paddingLeft:13}}>
-                  {fmtKg(x.v)}
-                </div>
+                <div style={{fontSize:13,fontWeight:700,color:x.c,paddingLeft:13}}>{fmtKg(x.v)}</div>
                 <div style={{fontSize:9,color:'#555',paddingLeft:13}}>{x.p}%</div>
               </div>
             ))}
           </div>
         </div>
       </div>
-
-      {/* Donut: Pengelolaan */}
       <div className="card">
         <div className="card-title" style={{marginBottom:12}}>♻ Pengelolaan</div>
         <div style={{display:'flex',alignItems:'center',gap:12,justifyContent:'center'}}>
-          <DonutChart
-            size={110} thick={16}
-            label={pctTPA.toFixed(0)+'%'} sublabel="ke TPA"
-            segments={[
-              {val:bP.Komposting, color:'#4ade80'},
-              {val:bP['Bank Sampah'], color:'#5aa8d6'},
-              {val:bP.TPA, color:'#e07050'},
-            ]}
-          />
+          <DonutChart size={110} thick={16} label={pctTPA.toFixed(0)+'%'} sublabel="ke TPA"
+            segments={[{val:bP.Komposting,color:'#4ade80'},{val:bP['Bank Sampah'],color:'#5aa8d6'},{val:bP.TPA,color:'#e07050'}]}/>
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {[
               {c:'#4ade80',icon:'♻',l:'Komposting',v:bP.Komposting},
@@ -1671,9 +1709,7 @@ function PageLaporan({records}){
                   <div style={{width:8,height:8,borderRadius:2,background:x.c,flexShrink:0}}/>
                   <span style={{fontSize:10,color:'var(--muted)'}}>{x.icon} {x.l}</span>
                 </div>
-                <div style={{fontSize:12,fontWeight:700,color:x.c,paddingLeft:13}}>
-                  {fmtKg(x.v)}
-                </div>
+                <div style={{fontSize:12,fontWeight:700,color:x.c,paddingLeft:13}}>{fmtKg(x.v)}</div>
               </div>
             ))}
           </div>
@@ -1681,10 +1717,10 @@ function PageLaporan({records}){
       </div>
     </div>
 
-    {/* ── 3. Bar: Per Jenis Sampah ── */}
+    {/* ── 3. Bar per jenis sampah ── */}
     <div className="card" style={{marginBottom:8}}>
-      <div className="card-title" style={{marginBottom:12}}>📊 Volume per Jenis Sampah</div>
-      <BarChart h={100} data={JENIS.map(j=>({
+      <div className="card-title" style={{marginBottom:12}}>📊 Volume per Jenis Sampah — {periodeLabel}</div>
+      <BarChart h={90} data={JENIS.map(j=>({
         label:j.label.replace('/','/ ').replace('Lain-lain (Kaca/Besi)','Lain-lain'),
         segs:[{v:tJ[j.key],c:j.color}],
       }))}/>
@@ -1699,13 +1735,14 @@ function PageLaporan({records}){
       </div>
     </div>
 
-    {/* ── 4. Trend Harian ── */}
-    {dailySorted.length>0&&(
+    {/* ── 4. Tren Kumulatif Bulanan (SEMUA data) ── */}
+    {trenBulan.length>0&&(
       <div className="card" style={{marginBottom:8}}>
-        <div className="card-title" style={{marginBottom:4}}>
-          📈 Trend Harian — {BULAN_FULL[b]} {y}
-          <span style={{marginLeft:'auto',fontSize:9,fontWeight:400,color:'var(--muted)'}}>
-            {dailySorted.length} hari pencatatan
+        <div className="card-title" style={{marginBottom:4,display:'flex',alignItems:'center',flexWrap:'wrap',gap:6}}>
+          📈 Tren Kumulatif Timbulan
+          <span style={{fontSize:9,fontWeight:400,color:'var(--muted)',marginLeft:'auto'}}>
+            {trenBulan.length} bulan · {trenBulan[0]?.yr}
+            {trenBulan[trenBulan.length-1]?.yr!==trenBulan[0]?.yr?` – ${trenBulan[trenBulan.length-1]?.yr}`:''}
           </span>
         </div>
         <div style={{display:'flex',gap:8,marginBottom:8,fontSize:9}}>
@@ -1715,18 +1752,68 @@ function PageLaporan({records}){
               <span style={{color:'var(--muted)'}}>{x.l}</span>
             </div>
           ))}
+          {mode!=='all'&&<span style={{color:'var(--g2)',marginLeft:4,fontSize:9}}>⬛ = periode dipilih</span>}
         </div>
-        <BarChart h={100} data={dailySorted.map(r=>({
-          label:new Date(r.tanggal).getDate().toString(),
-          segs:[
-            {v:sumGrup(r,'organik'),c:'#4ade80'},
-            {v:sumGrup(r,'anorganik'),c:'#f59e0b'},
-          ],
-        }))}/>
+        {/* Grafik tren — tampilkan semua bulan, highlight periode dipilih */}
+        <div style={{display:'flex',alignItems:'flex-end',gap:2,height:130,paddingTop:6,overflowX:'auto'}}>
+          {trenBulan.map((m,i)=>{
+            const tot2=m.org+m.anorg;
+            const maxV=Math.max(...trenBulan.map(x=>x.org+x.anorg),1);
+            const hO=Math.max((m.org/maxV)*100,m.org>0?2:0);
+            const hA=Math.max((m.anorg/maxV)*100,m.anorg>0?2:0);
+            // Highlight jika sesuai filter
+            const isSelected=(mode==='bulan'&&m.bln===b&&m.yr===y)||(mode==='tahun'&&m.yr===y)||mode==='all';
+            return(
+              <div key={m.k} style={{
+                flex:`0 0 ${Math.max(24, Math.floor(600/trenBulan.length))}px`,
+                display:'flex',flexDirection:'column',alignItems:'center',gap:2,
+                opacity:isSelected?1:0.35,
+                transition:'opacity .3s',
+              }}>
+                {tot2>0&&<span style={{fontSize:6,color:'var(--muted)',textAlign:'center',lineHeight:1.2}}>{fmt(tot2)}</span>}
+                <div style={{width:'100%',display:'flex',flexDirection:'column-reverse',height:100,justifyContent:'flex-start'}}>
+                  <div style={{width:'100%',height:hO,background:'#4ade80',borderRadius:isSelected?'3px 3px 0 0':'2px 2px 0 0',
+                    boxShadow:isSelected?'0 0 4px rgba(74,222,128,.4)':'none'}}/>
+                  <div style={{width:'100%',height:hA,background:'#f59e0b'}}/>
+                </div>
+                <div style={{fontSize:6,color:isSelected?'var(--white)':'var(--muted)',textAlign:'center',lineHeight:1.3,fontWeight:isSelected?700:400}}>
+                  {BULAN_SHORT[m.bln]}<br/>{String(m.yr).slice(2)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {/* Tren tahunan ringkasan */}
+        {trenTahun.length>1&&(
+          <div style={{marginTop:10,paddingTop:10,borderTop:'1px solid var(--border)'}}>
+            <div style={{fontSize:9,fontWeight:700,color:'var(--muted)',textTransform:'uppercase',
+              letterSpacing:.5,marginBottom:6}}>Total per Tahun</div>
+            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+              {trenTahun.map(yr=>{
+                const ytot=yr.org+yr.anorg;
+                const isYrSel=(mode==='tahun'||mode==='bulan')&&yr.yr===y;
+                return(
+                  <div key={yr.yr} onClick={()=>{setMode('tahun');setY(yr.yr);}}
+                    style={{
+                      cursor:'pointer',
+                      background:isYrSel?'rgba(93,189,106,.2)':'var(--bg)',
+                      border:`1px solid ${isYrSel?'var(--g1)':'var(--border)'}`,
+                      borderRadius:8,padding:'6px 10px',textAlign:'center',minWidth:70,
+                    }}>
+                    <div style={{fontSize:11,fontWeight:700,color:isYrSel?'var(--g1)':'var(--white)'}}>{yr.yr}</div>
+                    <div style={{fontSize:10,color:'#4ade80'}}>{fmtKg(yr.org)}</div>
+                    <div style={{fontSize:10,color:'#f59e0b'}}>{fmtKg(yr.anorg)}</div>
+                    <div style={{fontSize:9,color:'var(--muted)',marginTop:1}}>{fmtKg(ytot)}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     )}
 
-    {/* ── 5. Per ULTG + GI breakdown ── */}
+    {/* ── 5. Per ULTG + GI ── */}
     {byULTG.length>=1&&(
       <div className="card">
         <div className="card-title" style={{marginBottom:4,display:'flex',alignItems:'center'}}>
@@ -1740,101 +1827,54 @@ function PageLaporan({records}){
             ))}
           </div>
         </div>
-        <div style={{fontSize:9,color:'var(--muted)',marginBottom:12}}>Klik ULTG untuk lihat/sembunyikan detail GI</div>
-
+        <div style={{fontSize:9,color:'var(--muted)',marginBottom:10}}>Klik ULTG untuk lihat/sembunyikan detail GI</div>
         {byULTG.map(u=>{
           const uTot=u.org+u.anorg;
           const uPct=tot>0?((uTot/tot)*100):0;
           const warna=ULTG_WARNA[u.ultg]||'var(--g1)';
-          const isOpen=expandedULTG[u.ultg]!==false; // default terbuka
-          const uMax=Math.max(...u.loks.map(l=>l.org+l.anorg),1);
-
+          const isOpen=expandedULTG[u.ultg]!==false;
           return(
             <div key={u.ultg} style={{marginBottom:12}}>
-              {/* ── Header ULTG ── */}
-              <div
-                onClick={()=>toggleULTG(u.ultg)}
-                style={{cursor:'pointer',
-                  background:`${warna}18`,
-                  border:`1px solid ${warna}40`,
-                  borderRadius:8,padding:'8px 10px',
-                  marginBottom:isOpen&&u.loks.length?6:0,
-                }}>
+              <div onClick={()=>toggleULTG(u.ultg)} style={{cursor:'pointer',
+                background:`${warna}18`,border:`1px solid ${warna}40`,
+                borderRadius:8,padding:'8px 10px',marginBottom:isOpen&&u.loks.length?6:0}}>
                 <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:6}}>
-                  <div style={{width:10,height:10,borderRadius:3,
-                    background:warna,flexShrink:0}}/>
-                  <span style={{fontSize:12,fontWeight:700,color:'var(--white)',flex:1}}>
-                    {u.ultg}
-                  </span>
-                  <span style={{fontSize:9,color:warna,fontWeight:700}}>
-                    {u.loks.length} lokasi
-                  </span>
+                  <div style={{width:10,height:10,borderRadius:3,background:warna,flexShrink:0}}/>
+                  <span style={{fontSize:12,fontWeight:700,color:'var(--white)',flex:1}}>{u.ultg}</span>
+                  <span style={{fontSize:9,color:warna,fontWeight:700}}>{u.loks.length} lokasi</span>
                   <div style={{display:'flex',gap:7,fontSize:10}}>
                     <span style={{color:'#4ade80'}}>{fmtKg(u.org)}</span>
                     <span style={{color:'#f59e0b'}}>{fmtKg(u.anorg)}</span>
                     <span style={{color:'var(--white)',fontWeight:700}}>{fmtKg(uTot)}</span>
                     <span style={{color:'var(--muted)'}}>({uPct.toFixed(1)}%)</span>
                   </div>
-                  <span style={{fontSize:10,color:'var(--muted)',marginLeft:4}}>
-                    {isOpen?'▲':'▼'}
-                  </span>
+                  <span style={{fontSize:10,color:'var(--muted)',marginLeft:4}}>{isOpen?'▲':'▼'}</span>
                 </div>
-                {/* Bar ULTG */}
-                <div style={{height:7,borderRadius:4,background:'rgba(255,255,255,.06)',
-                  overflow:'hidden',display:'flex'}}>
+                <div style={{height:7,borderRadius:4,background:'rgba(255,255,255,.06)',overflow:'hidden',display:'flex'}}>
                   <div style={{width:`${tot>0?(u.org/tot*100):0}%`,background:'#4ade80',transition:'width .6s'}}/>
                   <div style={{width:`${tot>0?(u.anorg/tot*100):0}%`,background:'#f59e0b',transition:'width .6s'}}/>
                 </div>
               </div>
-
-              {/* ── Daftar GI/Lokasi ── */}
               {isOpen&&u.loks.map((lok,li)=>{
                 const lTot=lok.org+lok.anorg;
-                const lPctULTG=uTot>0?((lTot/uTot)*100):0;
-                const isLast=li===u.loks.length-1;
+                const lPct=uTot>0?((lTot/uTot)*100):0;
                 return(
-                  <div key={lok.nama} style={{
-                    display:'flex',gap:8,alignItems:'center',
-                    padding:'5px 8px 5px 16px',
-                    borderLeft:`2px solid ${warna}40`,
-                    marginLeft:8,
-                    borderBottom:isLast?'none':'1px solid rgba(255,255,255,.04)',
-                    background: li%2===0?'rgba(255,255,255,.015)':'transparent',
-                  }}>
-                    {/* Tipe badge */}
-                    <div style={{
-                      width:26,fontSize:8,fontWeight:700,textAlign:'center',
-                      padding:'1px 3px',borderRadius:4,flexShrink:0,
-                      background:`${warna}25`,color:warna,
-                    }}>{lok.tipe}</div>
-
-                    {/* Nama lokasi */}
+                  <div key={lok.nama} style={{display:'flex',gap:8,alignItems:'center',
+                    padding:'5px 8px 5px 16px',borderLeft:`2px solid ${warna}40`,marginLeft:8,
+                    borderBottom:li===u.loks.length-1?'none':'1px solid rgba(255,255,255,.04)',
+                    background:li%2===0?'rgba(255,255,255,.015)':'transparent'}}>
+                    <div style={{width:26,fontSize:8,fontWeight:700,textAlign:'center',padding:'1px 3px',
+                      borderRadius:4,flexShrink:0,background:`${warna}25`,color:warna}}>{lok.tipe}</div>
                     <div style={{fontSize:11,color:'var(--text)',flex:'0 0 auto',minWidth:0,
                       maxWidth:110,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {lok.nama.replace('GI ','').replace('GIS ','').replace('GITET ','')}
                     </div>
-
-                    {/* Bar */}
-                    <div style={{flex:1,height:6,borderRadius:3,
-                      background:'rgba(255,255,255,.05)',overflow:'hidden',display:'flex'}}>
-                      <div style={{
-                        width:`${uTot>0?(lok.org/uTot*100):0}%`,
-                        background:'#4ade80',transition:'width .5s',
-                      }}/>
-                      <div style={{
-                        width:`${uTot>0?(lok.anorg/uTot*100):0}%`,
-                        background:'#f59e0b',transition:'width .5s',
-                      }}/>
+                    <div style={{flex:1,height:6,borderRadius:3,background:'rgba(255,255,255,.05)',overflow:'hidden',display:'flex'}}>
+                      <div style={{width:`${uTot>0?(lok.org/uTot*100):0}%`,background:'#4ade80',transition:'width .5s'}}/>
+                      <div style={{width:`${uTot>0?(lok.anorg/uTot*100):0}%`,background:'#f59e0b',transition:'width .5s'}}/>
                     </div>
-
-                    {/* Nilai */}
-                    <div style={{fontSize:10,fontWeight:700,color:'var(--white)',
-                      flexShrink:0,textAlign:'right',minWidth:52}}>
-                      {fmtKg(lTot)}
-                    </div>
-                    <div style={{fontSize:9,color:'var(--muted)',flexShrink:0,minWidth:36,textAlign:'right'}}>
-                      {lPctULTG.toFixed(0)}%
-                    </div>
+                    <div style={{fontSize:10,fontWeight:700,color:'var(--white)',flexShrink:0,textAlign:'right',minWidth:52}}>{fmtKg(lTot)}</div>
+                    <div style={{fontSize:9,color:'var(--muted)',flexShrink:0,minWidth:36,textAlign:'right'}}>{lPct.toFixed(0)}%</div>
                   </div>
                 );
               })}
@@ -1843,6 +1883,7 @@ function PageLaporan({records}){
         })}
       </div>
     )}
+    </>}
   </>);
 }
 

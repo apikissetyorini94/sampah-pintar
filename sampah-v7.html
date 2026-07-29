@@ -1531,17 +1531,26 @@ function PageLaporan({records}){
   const pctTPA=tot>0?((bP.TPA/tot)*100):0;
   const dailySorted=useMemo(()=>[...f].sort((a,x)=>a.tanggal.localeCompare(x.tanggal)),[f]);
 
-  // Per-ULTG breakdown
+  // Per-ULTG + per-GI breakdown
   const byULTG=useMemo(()=>{
     const m={};
     f.forEach(r=>{
       const u=r.lokasiULTG||'Lainnya';
-      if(!m[u])m[u]={ultg:u,org:0,anorg:0};
+      const lid=r.lokasiId||r.lokasiNama||'-';
+      if(!m[u])m[u]={ultg:u,org:0,anorg:0,loks:{}};
       m[u].org+=sumGrup(r,'organik');
       m[u].anorg+=sumGrup(r,'anorganik');
+      if(!m[u].loks[lid])m[u].loks[lid]={nama:r.lokasiNama||'-',tipe:r.lokTipe||'-',org:0,anorg:0};
+      m[u].loks[lid].org+=sumGrup(r,'organik');
+      m[u].loks[lid].anorg+=sumGrup(r,'anorganik');
     });
-    return Object.values(m).sort((a,b)=>(b.org+b.anorg)-(a.org+a.anorg));
+    return Object.values(m).map(u=>({
+      ...u,
+      loks:Object.values(u.loks).sort((a,b)=>(b.org+b.anorg)-(a.org+a.anorg))
+    })).sort((a,b)=>(b.org+b.anorg)-(a.org+a.anorg));
   },[f]);
+  const [expandedULTG,setExpandedULTG]=useState({});
+  const toggleULTG=u=>setExpandedULTG(p=>({...p,[u]:!p[u]}));
 
   if(f.length===0) return(
     <>
@@ -1717,60 +1726,121 @@ function PageLaporan({records}){
       </div>
     )}
 
-    {/* ── 5. Per ULTG breakdown ── */}
-    {byULTG.length>1&&(
+    {/* ── 5. Per ULTG + GI breakdown ── */}
+    {byULTG.length>=1&&(
       <div className="card">
-        <div className="card-title" style={{marginBottom:12}}>
-          🏢 Kontribusi per ULTG
+        <div className="card-title" style={{marginBottom:4,display:'flex',alignItems:'center'}}>
+          🏢 Kontribusi per ULTG & GI
+          <div style={{marginLeft:'auto',display:'flex',gap:10,fontSize:9}}>
+            {[{c:'#4ade80',l:'Organik'},{c:'#f59e0b',l:'Anorganik'}].map(x=>(
+              <div key={x.l} style={{display:'flex',alignItems:'center',gap:4}}>
+                <div style={{width:7,height:7,borderRadius:2,background:x.c}}/>
+                <span style={{color:'var(--muted)'}}>{x.l}</span>
+              </div>
+            ))}
+          </div>
         </div>
+        <div style={{fontSize:9,color:'var(--muted)',marginBottom:12}}>Klik ULTG untuk lihat/sembunyikan detail GI</div>
+
         {byULTG.map(u=>{
-          const total=u.org+u.anorg;
-          const pct=tot>0?((total/tot)*100):0;
-          const warna=ULTG_WARNA[u.ultg]||'var(--muted)';
+          const uTot=u.org+u.anorg;
+          const uPct=tot>0?((uTot/tot)*100):0;
+          const warna=ULTG_WARNA[u.ultg]||'var(--g1)';
+          const isOpen=expandedULTG[u.ultg]!==false; // default terbuka
+          const uMax=Math.max(...u.loks.map(l=>l.org+l.anorg),1);
+
           return(
-            <div key={u.ultg} style={{marginBottom:10}}>
-              <div style={{display:'flex',justifyContent:'space-between',
-                alignItems:'center',marginBottom:4}}>
-                <div style={{display:'flex',alignItems:'center',gap:6}}>
+            <div key={u.ultg} style={{marginBottom:12}}>
+              {/* ── Header ULTG ── */}
+              <div
+                onClick={()=>toggleULTG(u.ultg)}
+                style={{cursor:'pointer',
+                  background:`${warna}18`,
+                  border:`1px solid ${warna}40`,
+                  borderRadius:8,padding:'8px 10px',
+                  marginBottom:isOpen&&u.loks.length?6:0,
+                }}>
+                <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:6}}>
                   <div style={{width:10,height:10,borderRadius:3,
                     background:warna,flexShrink:0}}/>
-                  <span style={{fontSize:11,fontWeight:600,color:'var(--white)'}}>
+                  <span style={{fontSize:12,fontWeight:700,color:'var(--white)',flex:1}}>
                     {u.ultg}
                   </span>
+                  <span style={{fontSize:9,color:warna,fontWeight:700}}>
+                    {u.loks.length} lokasi
+                  </span>
+                  <div style={{display:'flex',gap:7,fontSize:10}}>
+                    <span style={{color:'#4ade80'}}>{fmtKg(u.org)}</span>
+                    <span style={{color:'#f59e0b'}}>{fmtKg(u.anorg)}</span>
+                    <span style={{color:'var(--white)',fontWeight:700}}>{fmtKg(uTot)}</span>
+                    <span style={{color:'var(--muted)'}}>({uPct.toFixed(1)}%)</span>
+                  </div>
+                  <span style={{fontSize:10,color:'var(--muted)',marginLeft:4}}>
+                    {isOpen?'▲':'▼'}
+                  </span>
                 </div>
-                <div style={{display:'flex',gap:8,fontSize:10}}>
-                  <span style={{color:'#4ade80'}}>{fmtKg(u.org)}</span>
-                  <span style={{color:'#f59e0b'}}>{fmtKg(u.anorg)}</span>
-                  <span style={{color:'var(--white)',fontWeight:700}}>{fmtKg(total)}</span>
-                  <span style={{color:'var(--muted)'}}>({pct.toFixed(1)}%)</span>
+                {/* Bar ULTG */}
+                <div style={{height:7,borderRadius:4,background:'rgba(255,255,255,.06)',
+                  overflow:'hidden',display:'flex'}}>
+                  <div style={{width:`${tot>0?(u.org/tot*100):0}%`,background:'#4ade80',transition:'width .6s'}}/>
+                  <div style={{width:`${tot>0?(u.anorg/tot*100):0}%`,background:'#f59e0b',transition:'width .6s'}}/>
                 </div>
               </div>
-              {/* Stacked bar */}
-              <div style={{height:8,borderRadius:4,background:'rgba(255,255,255,.05)',
-                overflow:'hidden',display:'flex'}}>
-                <div style={{
-                  width:`${tot>0?(u.org/tot*100):0}%`,
-                  background:'#4ade80',transition:'width .5s',
-                }}/>
-                <div style={{
-                  width:`${tot>0?(u.anorg/tot*100):0}%`,
-                  background:'#f59e0b',transition:'width .5s',
-                }}/>
-              </div>
+
+              {/* ── Daftar GI/Lokasi ── */}
+              {isOpen&&u.loks.map((lok,li)=>{
+                const lTot=lok.org+lok.anorg;
+                const lPctULTG=uTot>0?((lTot/uTot)*100):0;
+                const isLast=li===u.loks.length-1;
+                return(
+                  <div key={lok.nama} style={{
+                    display:'flex',gap:8,alignItems:'center',
+                    padding:'5px 8px 5px 16px',
+                    borderLeft:`2px solid ${warna}40`,
+                    marginLeft:8,
+                    borderBottom:isLast?'none':'1px solid rgba(255,255,255,.04)',
+                    background: li%2===0?'rgba(255,255,255,.015)':'transparent',
+                  }}>
+                    {/* Tipe badge */}
+                    <div style={{
+                      width:26,fontSize:8,fontWeight:700,textAlign:'center',
+                      padding:'1px 3px',borderRadius:4,flexShrink:0,
+                      background:`${warna}25`,color:warna,
+                    }}>{lok.tipe}</div>
+
+                    {/* Nama lokasi */}
+                    <div style={{fontSize:11,color:'var(--text)',flex:'0 0 auto',minWidth:0,
+                      maxWidth:110,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {lok.nama.replace('GI ','').replace('GIS ','').replace('GITET ','')}
+                    </div>
+
+                    {/* Bar */}
+                    <div style={{flex:1,height:6,borderRadius:3,
+                      background:'rgba(255,255,255,.05)',overflow:'hidden',display:'flex'}}>
+                      <div style={{
+                        width:`${uTot>0?(lok.org/uTot*100):0}%`,
+                        background:'#4ade80',transition:'width .5s',
+                      }}/>
+                      <div style={{
+                        width:`${uTot>0?(lok.anorg/uTot*100):0}%`,
+                        background:'#f59e0b',transition:'width .5s',
+                      }}/>
+                    </div>
+
+                    {/* Nilai */}
+                    <div style={{fontSize:10,fontWeight:700,color:'var(--white)',
+                      flexShrink:0,textAlign:'right',minWidth:52}}>
+                      {fmtKg(lTot)}
+                    </div>
+                    <div style={{fontSize:9,color:'var(--muted)',flexShrink:0,minWidth:36,textAlign:'right'}}>
+                      {lPctULTG.toFixed(0)}%
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           );
         })}
-        <div style={{display:'flex',gap:12,marginTop:6,fontSize:9,
-          justifyContent:'flex-end'}}>
-          <div style={{display:'flex',alignItems:'center',gap:4}}>
-            <div style={{width:8,height:8,borderRadius:2,background:'#4ade80'}}/>
-            <span style={{color:'var(--muted)'}}>Organik</span>
-          </div>
-          <div style={{display:'flex',alignItems:'center',gap:4}}>
-            <div style={{width:8,height:8,borderRadius:2,background:'#f59e0b'}}/>
-            <span style={{color:'var(--muted)'}}>Anorganik</span>
-          </div>
-        </div>
       </div>
     )}
   </>);

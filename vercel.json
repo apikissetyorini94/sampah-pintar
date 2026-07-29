@@ -1,9 +1,11 @@
 {
-  "version": 2,
-  "framework": null,
-  "buildCommand": "",
-  "outputDirectory": ".",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/sampah-v7.html" }
+  "builds": [
+    {
+      "src": "sampah-v7.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "/sampah-v7.html" }
   ]
 }

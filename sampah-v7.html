@@ -2075,6 +2075,538 @@ function PageAI({records}){
   </>);
 }
 
+
+// PAGE EVALUASI KEPATUHAN
+// Regulasi acuan:
+// - UU 18/2008  : Pengelolaan Sampah (prinsip 3R)
+// - PP 81/2012  : Pemilahan dari sumber, pengelola kawasan
+// - Perpres 97/2017 : Target pengurangan ≥30%, penanganan 70% non-TPA
+// - PermenLHK P.75/2019 : Peta jalan pengurangan sampah, pelaporan
+// - Kepmen LH 2648/2025 : Teknis kawasan industri/khusus, SIPSN
+
+function StatusBadge({status}){
+  const cfg={
+    'Memenuhi':    {bg:'rgba(93,189,106,.15)',border:'rgba(93,189,106,.4)',c:'#4ade80',icon:'✅'},
+    'Baik':        {bg:'rgba(93,189,106,.08)',border:'rgba(93,189,106,.25)',c:'#86efac',icon:'✔'},
+    'Perlu Peningkatan':{bg:'rgba(201,168,76,.12)',border:'rgba(201,168,76,.35)',c:'#fbbf24',icon:'⚠️'},
+    'Tidak Memenuhi': {bg:'rgba(224,112,80,.12)',border:'rgba(224,112,80,.35)',c:'#f87171',icon:'❌'},
+    'Belum Ada Data': {bg:'rgba(255,255,255,.05)',border:'rgba(255,255,255,.1)',c:'var(--muted)',icon:'—'},
+  };
+  const c=cfg[status]||cfg['Belum Ada Data'];
+  return(
+    <span style={{
+      display:'inline-flex',alignItems:'center',gap:4,
+      background:c.bg,border:`1px solid ${c.border}`,
+      borderRadius:20,padding:'2px 9px',fontSize:10,
+      fontWeight:700,color:c.c,whiteSpace:'nowrap',
+    }}>
+      {c.icon} {status}
+    </span>
+  );
+}
+
+function GaugeBar({pct,target,color='#4ade80',danger=false}){
+  const over=danger?pct>target:pct<target;
+  const c=danger
+    ?(pct<=target*0.5?'#4ade80':pct<=target?'#fbbf24':'#f87171')
+    :(pct>=target*1.5?'#4ade80':pct>=target?'#86efac':pct>=target*0.6?'#fbbf24':'#f87171');
+  return(
+    <div style={{marginTop:6}}>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:9,marginBottom:4}}>
+        <span style={{color:'var(--muted)'}}>0%</span>
+        <span style={{color:'#888',display:'flex',alignItems:'center',gap:4}}>
+          <span style={{width:1,height:10,background:'rgba(255,255,255,.2)',display:'inline-block'}}/>
+          Target {target}%
+        </span>
+        <span style={{color:'var(--muted)'}}>100%</span>
+      </div>
+      <div style={{height:12,borderRadius:6,background:'rgba(255,255,255,.06)',
+        overflow:'visible',position:'relative'}}>
+        <div style={{
+          height:'100%',width:`${Math.min(pct,100)}%`,
+          borderRadius:6,background:c,transition:'width .7s ease',
+        }}/>
+        {/* Garis target */}
+        <div style={{
+          position:'absolute',top:-3,left:`${Math.min(target,100)}%`,
+          width:2,height:18,background:'rgba(255,255,255,.4)',
+          borderRadius:1,transform:'translateX(-50%)',
+        }}/>
+      </div>
+      <div style={{textAlign:'center',marginTop:6}}>
+        <span style={{fontSize:20,fontWeight:800,color:c,fontFamily:'Syne,sans-serif'}}>
+          {pct.toFixed(1)}%
+        </span>
+        <span style={{fontSize:10,color:'var(--muted)',marginLeft:6}}>
+          {danger?(pct<=target?`✓ di bawah target ${target}%`:`↑ melampaui target ${target}%`)
+                :(pct>=target?`✓ mencapai target ${target}%`:`↓ belum capai target ${target}%`)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function PageEvaluasi({records}){
+  const [y,setY]=useState(TODAY.getFullYear());
+  const tahunList=useMemo(()=>{
+    const s=new Set(records.map(r=>new Date(r.tanggal).getFullYear()));
+    if(!s.size)s.add(TODAY.getFullYear());
+    return [...s].sort((a,b)=>a-b);
+  },[records]);
+
+  const f=useMemo(()=>records.filter(r=>new Date(r.tanggal).getFullYear()===y),[records,y]);
+
+  // ── Kalkulasi indikator ─────────────────────────────────
+  const totalKg=f.reduce((s,r)=>s+sumAll(r),0);
+  const orgKg=f.reduce((s,r)=>s+sumGrup(r,'organik'),0);
+  const anorgKg=f.reduce((s,r)=>s+sumGrup(r,'anorganik'),0);
+
+  // Metode pengelolaan
+  const pen={Komposting:0,'Bank Sampah':0,TPA:0};
+  f.forEach(r=>JENIS.forEach(j=>{
+    const p=r[penKey(j.key)]||'Komposting';
+    pen[p]=(pen[p]||0)+vNum(r[j.key]);
+  }));
+  const non3R=pen.TPA;
+  const r3R=pen.Komposting+pen['Bank Sampah'];
+  const pct3R=totalKg>0?(r3R/totalKg)*100:0;
+  const pctTPA=totalKg>0?(non3R/totalKg)*100:0;
+  const pctKompos=orgKg>0?(pen.Komposting/orgKg)*100:0;
+  const pctBankSampah=anorgKg>0?(pen['Bank Sampah']/anorgKg)*100:0;
+
+  // Pemilahan dari sumber
+  const adaOrganik=f.some(r=>sumGrup(r,'organik')>0);
+  const adaAnorganik=f.some(r=>sumGrup(r,'anorganik')>0);
+  const pemilahanOk=adaOrganik&&adaAnorganik;
+
+  // Konsistensi pelaporan (% bulan yang ada datanya dari 12 bulan)
+  const bulanAda=new Set(f.map(r=>new Date(r.tanggal).getMonth())).size;
+  const pctLaporan=(bulanAda/12)*100;
+
+  // Lokasi aktif vs total
+  const lokAktif=new Set(f.map(r=>r.lokasiId)).size;
+  const pctLokAktif=DATA_LOKASI.length>0?(lokAktif/DATA_LOKASI.length)*100:0;
+
+  // Tren 3R: bandingkan semester 1 vs semester 2
+  const sm1=f.filter(r=>new Date(r.tanggal).getMonth()<6);
+  const sm2=f.filter(r=>new Date(r.tanggal).getMonth()>=6);
+  const pct3R_sm1=sm1.length?((sm1.reduce((s,r)=>s+(vNum(r.pen_daun==='Komposting'?r.daun:0)+vNum(r.pen_makan==='Komposting'?r.makan:0)+vNum(r.pen_kertas==='Bank Sampah'?r.kertas:0)+vNum(r.pen_plastik==='Bank Sampah'?r.plastik:0)),0)/sm1.reduce((s,r)=>s+sumAll(r),1))*100):null;
+  const pct3R_sm2=sm2.length?((sm2.reduce((s,r)=>s+(vNum(r.pen_daun==='Komposting'?r.daun:0)+vNum(r.pen_makan==='Komposting'?r.makan:0)+vNum(r.pen_kertas==='Bank Sampah'?r.kertas:0)+vNum(r.pen_plastik==='Bank Sampah'?r.plastik:0)),0)/sm2.reduce((s,r)=>s+sumAll(r),1))*100):null;
+  const trenMembaik=pct3R_sm1!==null&&pct3R_sm2!==null&&pct3R_sm2>pct3R_sm1;
+
+  // Status per indikator
+  function status3R(p){if(!totalKg)return 'Belum Ada Data';if(p>=50)return 'Memenuhi';if(p>=30)return 'Baik';return 'Perlu Peningkatan';}
+  function statusTPA(p){if(!totalKg)return 'Belum Ada Data';if(p<=30)return 'Memenuhi';if(p<=70)return 'Baik';return 'Tidak Memenuhi';}
+  function statusLaporan(p){if(!f.length)return 'Belum Ada Data';if(p>=83)return 'Memenuhi';if(p>=50)return 'Baik';return 'Perlu Peningkatan';}
+  function statusPemilahan(){if(!f.length)return 'Belum Ada Data';if(pemilahanOk)return 'Memenuhi';return 'Perlu Peningkatan';}
+
+  // Skor total (0-100)
+  const skor3R    =Math.min(pct3R/30*40,40);   // max 40 poin (target 30%)
+  const skorTPA   =Math.max(0,(1-pctTPA/100)*30); // max 30 poin
+  const skorLaporan=(bulanAda/12)*20;            // max 20 poin
+  const skorPemilahan=pemilahanOk?10:0;          // max 10 poin
+  const skorTotal=Math.round(skor3R+skorTPA+skorLaporan+skorPemilahan);
+
+  // Per ULTG evaluasi
+  const byULTG2=useMemo(()=>{
+    const m={};
+    f.forEach(r=>{
+      const u=r.lokasiULTG||'Lainnya';
+      if(!m[u])m[u]={ultg:u,total:0,r3R:0,tpa:0,bulan:new Set(),loks:new Set()};
+      const tot=sumAll(r);
+      const r3r=vNum(r.pen_daun==='Komposting'?r.daun:0)+vNum(r.pen_makan==='Komposting'?r.makan:0)+vNum(r.pen_kertas==='Bank Sampah'?r.kertas:0)+vNum(r.pen_plastik==='Bank Sampah'?r.plastik:0)+vNum(r.pen_lain==='Bank Sampah'?r.lain:0);
+      m[u].total+=tot; m[u].r3R+=r3r; m[u].tpa+=vNum(r.lain); // simplified TPA
+      m[u].bulan.add(new Date(r.tanggal).getMonth());
+      m[u].loks.add(r.lokasiId||r.lokasiNama);
+    });
+    return Object.values(m).map(u=>{
+      // hitung TPA yang benar
+      let tpa2=0;
+      f.filter(r=>r.lokasiULTG===u.ultg).forEach(r=>JENIS.forEach(j=>{
+        if((r[penKey(j.key)]||'')==='TPA')tpa2+=vNum(r[j.key]);
+      }));
+      const p3R=u.total>0?(u.r3R/u.total)*100:0;
+      const pTPA=u.total>0?(tpa2/u.total)*100:0;
+      return{...u,p3R,pTPA,tpa2,bulanAda:u.bulan.size,lokAktif:u.loks.size};
+    }).sort((a,b)=>b.total-a.total);
+  },[f]);
+
+  const SS={background:'var(--bg)',border:'1px solid var(--border)',borderRadius:7,
+    color:'var(--text)',padding:'5px 9px',fontFamily:"'DM Sans',sans-serif",fontSize:11,outline:'none'};
+
+  if(records.length===0) return(
+    <div className="card" style={{textAlign:'center',padding:'40px 20px'}}>
+      <div style={{fontSize:40,marginBottom:12}}>📋</div>
+      <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,color:'var(--white)',marginBottom:6}}>Belum Ada Data</div>
+      <div style={{fontSize:11,color:'var(--muted)'}}>Input data harian terlebih dahulu untuk melihat evaluasi kepatuhan.</div>
+    </div>
+  );
+
+  return(<>
+    {/* Filter Tahun */}
+    <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+      <span style={{fontSize:11,color:'var(--muted)'}}>Tahun evaluasi:</span>
+      <select value={y} onChange={e=>setY(Number(e.target.value))} style={SS}>
+        {tahunList.map(yr=><option key={yr}>{yr}</option>)}
+      </select>
+    </div>
+
+    {/* ── Referensi Regulasi ── */}
+    <div className="card" style={{marginBottom:8,padding:'10px 14px',
+      background:'rgba(30,144,255,.06)',border:'1px solid rgba(30,144,255,.2)'}}>
+      <div style={{fontSize:10,fontWeight:700,color:'#7ab8ff',marginBottom:6,
+        textTransform:'uppercase',letterSpacing:.5}}>📜 Regulasi Acuan</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+        {[
+          'UU 18/2008','PP 81/2012','Perpres 97/2017',
+          'PermenLHK P.75/2019','Kepmen LH 2648/2025',
+        ].map(r=>(
+          <span key={r} style={{background:'rgba(30,144,255,.12)',border:'1px solid rgba(30,144,255,.25)',
+            borderRadius:5,padding:'2px 8px',fontSize:10,color:'#93c5fd',fontWeight:600}}>{r}</span>
+        ))}
+      </div>
+    </div>
+
+    {/* ── Skor Total ── */}
+    <div className="card" style={{marginBottom:8,
+      background:'linear-gradient(135deg,rgba(93,189,106,.1),rgba(30,144,255,.05))',
+      border:`1px solid ${skorTotal>=75?'rgba(93,189,106,.4)':skorTotal>=50?'rgba(201,168,76,.4)':'rgba(224,112,80,.4)'}`}}>
+      <div style={{display:'flex',alignItems:'center',gap:16}}>
+        <div style={{textAlign:'center',flexShrink:0}}>
+          <div style={{
+            fontFamily:'Syne,sans-serif',fontSize:42,fontWeight:900,lineHeight:1,
+            color:skorTotal>=75?'#4ade80':skorTotal>=50?'#fbbf24':'#f87171',
+          }}>{skorTotal}</div>
+          <div style={{fontSize:9,color:'var(--muted)',marginTop:2}}>/100</div>
+        </div>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:'Syne,sans-serif',fontSize:14,fontWeight:700,
+            color:'var(--white)',marginBottom:4}}>
+            Skor Kepatuhan Pengelolaan Sampah {y}
+          </div>
+          <div style={{fontSize:11,color:'var(--muted)',marginBottom:8}}>
+            {skorTotal>=75?'✅ Kinerja pengelolaan sampah sudah baik — pertahankan dan tingkatkan':
+             skorTotal>=50?'⚠️ Kinerja cukup — masih perlu peningkatan di beberapa indikator':
+             '❌ Kinerja masih rendah — diperlukan perbaikan segera'}
+          </div>
+          {/* Bar skor per komponen */}
+          {[
+            {l:'Pengurangan (3R)',v:Math.round(skor3R),max:40,c:'#4ade80'},
+            {l:'Diverting TPA',   v:Math.round(skorTPA),max:30,c:'#60a5fa'},
+            {l:'Pelaporan Rutin', v:Math.round(skorLaporan),max:20,c:'#a78bfa'},
+            {l:'Pemilahan Sumber',v:Math.round(skorPemilahan),max:10,c:'#f59e0b'},
+          ].map(x=>(
+            <div key={x.l} style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+              <span style={{fontSize:9,color:'var(--muted)',width:100,flexShrink:0}}>{x.l}</span>
+              <div style={{flex:1,height:6,borderRadius:3,background:'rgba(255,255,255,.07)',overflow:'hidden'}}>
+                <div style={{width:`${(x.v/x.max)*100}%`,height:'100%',background:x.c,
+                  borderRadius:3,transition:'width .6s'}}/>
+              </div>
+              <span style={{fontSize:9,color:x.c,fontWeight:700,width:28,textAlign:'right',flexShrink:0}}>
+                {x.v}/{x.max}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* ── Indikator 1: Tingkat Pengurangan 3R ── */}
+    <div className="card" style={{marginBottom:8}}>
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+        <div>
+          <div style={{fontSize:12,fontWeight:700,color:'var(--white)',marginBottom:2}}>
+            ♻ Indikator 1 — Tingkat Pengurangan Sampah (3R)
+          </div>
+          <div style={{fontSize:9,color:'var(--muted)'}}>
+            Perpres 97/2017 Pasal 3 · Target nasional: pengurangan ≥ 30% dari total timbulan
+          </div>
+        </div>
+        <StatusBadge status={status3R(pct3R)}/>
+      </div>
+      {totalKg>0?(
+        <>
+          <GaugeBar pct={pct3R} target={30}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:6,marginTop:10}}>
+            {[
+              {l:'Komposting',v:fmtKg(pen.Komposting),c:'#4ade80',p:totalKg>0?(pen.Komposting/totalKg*100).toFixed(1):0},
+              {l:'Bank Sampah',v:fmtKg(pen['Bank Sampah']),c:'#60a5fa',p:totalKg>0?(pen['Bank Sampah']/totalKg*100).toFixed(1):0},
+              {l:'TPA',v:fmtKg(pen.TPA),c:'#f87171',p:totalKg>0?(pen.TPA/totalKg*100).toFixed(1):0},
+            ].map(x=>(
+              <div key={x.l} style={{background:'var(--bg)',borderRadius:7,padding:'7px 9px',
+                border:`1px solid ${x.c}30`}}>
+                <div style={{fontSize:11,fontWeight:700,color:x.c}}>{x.v}</div>
+                <div style={{fontSize:9,color:'var(--muted)'}}>{x.p}% · {x.l}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      ):<div style={{fontSize:11,color:'var(--muted)',textAlign:'center',padding:'10px 0'}}>Tidak ada data tahun {y}</div>}
+    </div>
+
+    {/* ── Indikator 2: Diverting TPA ── */}
+    <div className="card" style={{marginBottom:8}}>
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:4}}>
+        <div>
+          <div style={{fontSize:12,fontWeight:700,color:'var(--white)',marginBottom:2}}>
+            🗑 Indikator 2 — Sampah ke TPA
+          </div>
+          <div style={{fontSize:9,color:'var(--muted)'}}>
+            Perpres 97/2017 · Target: sampah ke TPA ≤ 70% · Ideal: ≤ 30%
+          </div>
+        </div>
+        <StatusBadge status={statusTPA(pctTPA)}/>
+      </div>
+      {totalKg>0&&<GaugeBar pct={pctTPA} target={70} danger={true}/>}
+    </div>
+
+    {/* ── Indikator 3: Pemilahan dari Sumber ── */}
+    <div className="card" style={{marginBottom:8}}>
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:8}}>
+        <div>
+          <div style={{fontSize:12,fontWeight:700,color:'var(--white)',marginBottom:2}}>
+            🗂 Indikator 3 — Pemilahan Sampah dari Sumber
+          </div>
+          <div style={{fontSize:9,color:'var(--muted)'}}>
+            PP 81/2012 Pasal 19 · Kepmen LH 2648/2025 · Wajib pilah organik & anorganik di sumber
+          </div>
+        </div>
+        <StatusBadge status={statusPemilahan()}/>
+      </div>
+      {f.length>0&&(
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {[
+            {label:'Sampah Organik (Daun + Sisa Makan)',ada:adaOrganik,
+              note:adaOrganik?`${fmtKg(orgKg)} tercatat`:'Belum ada data organik'},
+            {label:'Sampah Anorganik (Kertas + Plastik + Lain)',ada:adaAnorganik,
+              note:adaAnorganik?`${fmtKg(anorgKg)} tercatat`:'Belum ada data anorganik'},
+          ].map(x=>(
+            <div key={x.label} style={{
+              display:'flex',gap:8,alignItems:'flex-start',
+              padding:'9px 11px',borderRadius:8,
+              background:x.ada?'rgba(93,189,106,.08)':'rgba(224,112,80,.08)',
+              border:`1px solid ${x.ada?'rgba(93,189,106,.25)':'rgba(224,112,80,.25)'}`,
+            }}>
+              <span style={{fontSize:18,flexShrink:0}}>{x.ada?'✅':'❌'}</span>
+              <div>
+                <div style={{fontSize:10,fontWeight:600,color:'var(--white)',marginBottom:2}}>{x.label}</div>
+                <div style={{fontSize:10,color:x.ada?'#86efac':'#f87171'}}>{x.note}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {pemilahanOk&&(
+        <div style={{marginTop:8,padding:'7px 10px',borderRadius:7,
+          background:'rgba(93,189,106,.07)',border:'1px solid rgba(93,189,106,.2)',
+          fontSize:10,color:'#86efac'}}>
+          ✅ Pemilahan organik & anorganik sudah dilakukan sejak sumber — sesuai Kepmen LH 2648/2025
+        </div>
+      )}
+    </div>
+
+    {/* ── Indikator 4: Konsistensi Pelaporan ── */}
+    <div className="card" style={{marginBottom:8}}>
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:8}}>
+        <div>
+          <div style={{fontSize:12,fontWeight:700,color:'var(--white)',marginBottom:2}}>
+            📅 Indikator 4 — Konsistensi Pelaporan
+          </div>
+          <div style={{fontSize:9,color:'var(--muted)'}}>
+            PermenLHK P.75/2019 · Kepmen LH 2648/2025 · Pelaporan berkala wajib (SIPSN)
+          </div>
+        </div>
+        <StatusBadge status={statusLaporan(pctLaporan)}/>
+      </div>
+      {/* Kalender 12 bulan */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:5}}>
+        {BULAN_SHORT.map((bn,i)=>{
+          const adaData=f.some(r=>new Date(r.tanggal).getMonth()===i);
+          const isFuture=y===TODAY.getFullYear()&&i>TODAY.getMonth();
+          return(
+            <div key={i} style={{
+              textAlign:'center',padding:'6px 4px',borderRadius:7,
+              background:isFuture?'rgba(255,255,255,.02)':adaData?'rgba(93,189,106,.15)':'rgba(224,112,80,.1)',
+              border:`1px solid ${isFuture?'rgba(255,255,255,.06)':adaData?'rgba(93,189,106,.35)':'rgba(224,112,80,.25)'}`,
+              opacity:isFuture?.4:1,
+            }}>
+              <div style={{fontSize:9,fontWeight:700,
+                color:isFuture?'var(--muted)':adaData?'#4ade80':'#f87171'}}>{bn}</div>
+              <div style={{fontSize:14,marginTop:2}}>{isFuture?'·':adaData?'✓':'✗'}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{marginTop:8,display:'flex',gap:8,justifyContent:'center',fontSize:10}}>
+        <span style={{color:'#4ade80'}}>✓ {bulanAda} bulan ada data</span>
+        <span style={{color:'#f87171'}}>✗ {Math.min(12,TODAY.getMonth()+1+(y<TODAY.getFullYear()?12-TODAY.getMonth()-1:0))-bulanAda} bulan kosong</span>
+        {y===TODAY.getFullYear()&&<span style={{color:'var(--muted)'}}>· {12-TODAY.getMonth()-1} bulan ke depan</span>}
+      </div>
+    </div>
+
+    {/* ── Indikator 5: Tren Perbaikan ── */}
+    {pct3R_sm1!==null&&pct3R_sm2!==null&&(
+      <div className="card" style={{marginBottom:8}}>
+        <div style={{fontSize:12,fontWeight:700,color:'var(--white)',marginBottom:4}}>
+          📈 Indikator 5 — Tren Perbaikan Pengelolaan
+        </div>
+        <div style={{fontSize:9,color:'var(--muted)',marginBottom:8}}>
+          PermenLHK P.75/2019 — Pemantauan dan evaluasi capaian berkala
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8}}>
+          {[
+            {l:'Semester I (Jan-Jun)',v:pct3R_sm1,c:'#60a5fa'},
+            {l:'Semester II (Jul-Des)',v:pct3R_sm2,c:trenMembaik?'#4ade80':'#f87171'},
+            {l:'Tren',v:null,tren:trenMembaik},
+          ].map((x,i)=>(
+            <div key={i} style={{background:'var(--bg)',borderRadius:8,padding:'10px',
+              border:'1px solid var(--border)',textAlign:'center'}}>
+              {x.v!==null?(
+                <>
+                  <div style={{fontSize:18,fontWeight:800,color:x.c,fontFamily:'Syne,sans-serif'}}>
+                    {x.v.toFixed(1)}%
+                  </div>
+                  <div style={{fontSize:9,color:'var(--muted)',marginTop:3}}>{x.l}</div>
+                  <div style={{fontSize:9,color:'var(--muted)'}}>Tingkat 3R</div>
+                </>
+              ):(
+                <>
+                  <div style={{fontSize:28}}>{x.tren?'📈':'📉'}</div>
+                  <div style={{fontSize:10,fontWeight:700,
+                    color:x.tren?'#4ade80':'#f87171',marginTop:4}}>
+                    {x.tren?'Membaik':'Menurun'}
+                  </div>
+                  <div style={{fontSize:9,color:'var(--muted)'}}>
+                    {x.tren?`+${(pct3R_sm2-pct3R_sm1).toFixed(1)}%`:`${(pct3R_sm2-pct3R_sm1).toFixed(1)}%`}
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {/* ── Evaluasi per ULTG ── */}
+    {byULTG2.length>0&&(
+      <div className="card" style={{marginBottom:8}}>
+        <div style={{fontSize:12,fontWeight:700,color:'var(--white)',marginBottom:4}}>
+          🏢 Evaluasi per ULTG — {y}
+        </div>
+        <div style={{fontSize:9,color:'var(--muted)',marginBottom:10}}>
+          PP 81/2012 · Pengelola kawasan bertanggung jawab atas pengelolaan sampah di wilayahnya
+        </div>
+        <div style={{overflowX:'auto'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:10}}>
+            <thead>
+              <tr style={{borderBottom:'1px solid var(--border)'}}>
+                {['ULTG','Total (kg)','3R %','TPA %','Bulan','Lokasi Aktif','Status'].map(h=>(
+                  <th key={h} style={{padding:'5px 8px',textAlign:'left',fontSize:9,
+                    fontWeight:700,color:'var(--muted)',whiteSpace:'nowrap'}}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {byULTG2.map((u,i)=>{
+                const st=status3R(u.p3R);
+                const warna=ULTG_WARNA[u.ultg]||'var(--muted)';
+                return(
+                  <tr key={u.ultg} style={{
+                    borderBottom:'1px solid rgba(255,255,255,.04)',
+                    background:i%2===0?'rgba(255,255,255,.02)':'transparent',
+                  }}>
+                    <td style={{padding:'6px 8px'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6}}>
+                        <div style={{width:8,height:8,borderRadius:2,background:warna,flexShrink:0}}/>
+                        <span style={{fontWeight:600,color:'var(--white)',whiteSpace:'nowrap',fontSize:10}}>
+                          {u.ultg.replace('ULTG ','')}
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{padding:'6px 8px',color:'var(--text)'}}>{fmtKg(u.total)}</td>
+                    <td style={{padding:'6px 8px',
+                      color:u.p3R>=30?'#4ade80':u.p3R>=15?'#fbbf24':'#f87171',fontWeight:700}}>
+                      {u.p3R.toFixed(1)}%
+                    </td>
+                    <td style={{padding:'6px 8px',
+                      color:u.pTPA<=30?'#4ade80':u.pTPA<=70?'#fbbf24':'#f87171',fontWeight:700}}>
+                      {u.pTPA.toFixed(1)}%
+                    </td>
+                    <td style={{padding:'6px 8px',color:'var(--muted)'}}>{u.bulanAda}/12</td>
+                    <td style={{padding:'6px 8px',color:'var(--muted)'}}>{u.lokAktif} lok.</td>
+                    <td style={{padding:'6px 8px'}}><StatusBadge status={st}/></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )}
+
+    {/* ── Rekomendasi ── */}
+    <div className="card">
+      <div style={{fontSize:12,fontWeight:700,color:'var(--white)',marginBottom:10}}>
+        💡 Rekomendasi Tindakan
+      </div>
+      {[
+        pct3R<30&&totalKg>0 && {
+          level:'high',icon:'🔴',
+          title:'Tingkat 3R belum mencapai target 30% (Perpres 97/2017)',
+          desc:`Saat ini ${pct3R.toFixed(1)}% sampah berhasil dikurangi/didaur ulang. Tingkatkan program komposting organik dan setoran ke bank sampah untuk anorganik.`,
+        },
+        pctTPA>70&&totalKg>0 && {
+          level:'high',icon:'🔴',
+          title:'Lebih dari 70% sampah masih berakhir di TPA',
+          desc:'Segera evaluasi program pengelolaan di setiap ULTG. Dorong pemilahan di sumber dan kerja sama dengan bank sampah atau pengepul setempat.',
+        },
+        !pemilahanOk&&f.length>0 && {
+          level:'high',icon:'🔴',
+          title:'Pemilahan organik dan anorganik belum lengkap (Kepmen LH 2648/2025)',
+          desc:`${!adaOrganik?'Data sampah organik belum ada.':''} ${!adaAnorganik?'Data sampah anorganik belum ada.':''} Pastikan setiap input mencatat kedua kategori.`,
+        },
+        bulanAda<10&&f.length>0 && {
+          level:'med',icon:'🟡',
+          title:`Pelaporan hanya ${bulanAda} dari 12 bulan (PermenLHK P.75/2019)`,
+          desc:'Tingkatkan konsistensi pencatatan. Laporan berkala setiap bulan adalah kewajiban sesuai regulasi dan mendukung pelaporan ke SIPSN.',
+        },
+        orgKg>0&&pctKompos<50 && {
+          level:'med',icon:'🟡',
+          title:'Kurang dari 50% sampah organik dikemposting',
+          desc:`Hanya ${pctKompos.toFixed(1)}% sampah organik yang dikemposting. Optimimalkan fasilitas komposting di setiap lokasi GI.`,
+        },
+        pct3R>=30&&pctTPA<=70&&pemilahanOk&&bulanAda>=10 && {
+          level:'ok',icon:'🟢',
+          title:'Kinerja pengelolaan sampah sudah memenuhi indikator utama',
+          desc:'Pertahankan program yang sudah berjalan. Tingkatkan target 3R ke ≥50% untuk mencapai predikat Sangat Baik.',
+        },
+        true && {
+          level:'info',icon:'ℹ️',
+          title:'Wajib lapor ke SIPSN (Sistem Informasi Pengelolaan Sampah Nasional)',
+          desc:'Sesuai Kepmen LH 2648/2025, pengelola kawasan wajib melaporkan data pengelolaan sampah secara berkala ke SIPSN. Ekspor data dari SampahPintar sebagai bahan pelaporan.',
+        },
+      ].filter(Boolean).map((r,i)=>{
+        const cfg={high:'rgba(224,112,80,.1)',med:'rgba(201,168,76,.1)',ok:'rgba(93,189,106,.1)',info:'rgba(30,144,255,.1)'};
+        const cfgBorder={high:'rgba(224,112,80,.3)',med:'rgba(201,168,76,.3)',ok:'rgba(93,189,106,.3)',info:'rgba(30,144,255,.2)'};
+        return(
+          <div key={i} style={{
+            padding:'10px 12px',borderRadius:9,marginBottom:8,
+            background:cfg[r.level]||cfg.info,
+            border:`1px solid ${cfgBorder[r.level]||cfgBorder.info}`,
+            display:'flex',gap:10,alignItems:'flex-start',
+          }}>
+            <span style={{fontSize:18,flexShrink:0}}>{r.icon}</span>
+            <div>
+              <div style={{fontSize:11,fontWeight:700,color:'var(--white)',marginBottom:3}}>{r.title}</div>
+              <div style={{fontSize:10,color:'var(--muted)',lineHeight:1.6}}>{r.desc}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </>);
+}
+
 // PAGE EKSPOR
 function PageEkspor({records,showToast}){
   const [b,setB]=useState(TODAY.getMonth());
@@ -2187,6 +2719,7 @@ const NAV=[
   {id:'data',    icon:'📋',  label:'Data Tersimpan'},
   {id:'laporan', icon:'📊',  label:'Laporan Bulanan'},
   {id:'ai',      icon:'🤖',  label:'AI & Prediksi',   ai:true},
+  {id:'evaluasi',icon:'📋',  label:'Evaluasi Kepatuhan'},
   {id:'ekspor',  icon:'📤',  label:'Ekspor Excel'},
 ];
 const PAGE_TITLE={
@@ -2195,6 +2728,7 @@ const PAGE_TITLE={
   data:'📋 Data Tersimpan',
   laporan:'📊 Laporan Bulanan',
   ai:'🤖 AI Analisis & Prediksi',
+  evaluasi:'📋 Evaluasi Kepatuhan Pengelolaan Sampah',
   ekspor:'📤 Ekspor Spreadsheet',
 };
 
@@ -2528,6 +3062,7 @@ function App(){
             {page==='data'    &&<PageData    records={records} onDelete={deleteRecord}/>}
             {page==='laporan' &&<PageLaporan records={records}/>}
             {page==='ai'      &&<PageAI      records={records}/>}
+            {page==='evaluasi'&&<PageEvaluasi records={records}/>}
             {page==='ekspor'  &&<PageEkspor  records={records} showToast={showToast}/>}
           </div>
         }

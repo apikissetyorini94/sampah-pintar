@@ -1,1 +1,9 @@
-{}
+{
+  "version": 2,
+  "framework": null,
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/sampah-v7.html" }
+  ]
+}

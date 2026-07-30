@@ -110,18 +110,19 @@ input[type=number]::-webkit-inner-spin-button{opacity:.3}
 .content-map{flex:1;position:relative;min-height:0;overflow:hidden}
 /* Filter overlay di atas peta */
 .map-filter-bar{
-  position:absolute;top:10px;left:10px;z-index:900;
-  display:flex;gap:6px;flex-wrap:wrap;align-items:center;
-  pointer-events:all;
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  z-index:900;display:flex;gap:6px;flex-wrap:nowrap;align-items:center;
+  pointer-events:all;white-space:nowrap;
 }
 .mf-sel{
-  background:rgba(13,27,18,.88);
+  background:rgba(13,27,18,.92);
   border:1px solid rgba(93,189,106,.3);
   border-radius:8px;color:var(--text);
-  padding:6px 10px;font-family:'DM Sans',sans-serif;
+  padding:6px 28px 6px 10px;font-family:'DM Sans',sans-serif;
   font-size:11px;font-weight:600;outline:none;
   cursor:pointer;backdrop-filter:blur(8px);
-  min-width:90px;max-width:140px;
+  min-width:110px;max-width:160px;
+  -webkit-appearance:auto;
 }
 .mf-search{
   background:rgba(13,27,18,.88);
@@ -1071,7 +1072,7 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,setFilterUL
       {/* Dropdown hasil pencarian */}
       {searchPeta.trim()&&searchResults.length>0&&(
         <div style={{
-          position:'absolute',top:48,left:10,zIndex:901,
+          position:'absolute',top:48,left:'50%',transform:'translateX(-50%)',zIndex:901,
           background:'rgba(13,27,18,.96)',border:'1px solid rgba(93,189,106,.25)',
           borderRadius:10,overflow:'hidden',minWidth:220,maxWidth:280,
           boxShadow:'0 8px 24px rgba(0,0,0,.5)',backdropFilter:'blur(8px)',
@@ -1254,14 +1255,15 @@ function PagePeta({sampahLokasi,setSampahLokasi,showToast,filterULTG,setFilterUL
       {/* ── Hint saat belum ada lokasi dipilih ── */}
       {!activeLok&&(
         <div style={{
-          position:'absolute',bottom:20,left:'50%',transform:'translateX(-50%)',
+          position:'absolute',bottom:16,left:'50%',transform:'translateX(-50%)',
           zIndex:800,
-          background:'rgba(13,27,18,.75)',
+          background:'rgba(13,27,18,.82)',
           border:'1px solid var(--border)',
-          borderRadius:20,padding:'6px 14px',
+          borderRadius:20,padding:'6px 16px',
           fontSize:10,color:'var(--muted)',
           pointerEvents:'none',
           backdropFilter:'blur(4px)',
+          whiteSpace:'nowrap',
         }}>
           🗺 Klik marker untuk memilih lokasi & input data
         </div>

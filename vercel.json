@@ -1,11 +1,1 @@
-{
-  "builds": [
-    {
-      "src": "sampah-pintar-UPT-Palembang-v8.html",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "/sampah-pintar-UPT-Palembang-v8.html" }
-  ]
-}
+```json { "cleanUrls": true } ``` 
